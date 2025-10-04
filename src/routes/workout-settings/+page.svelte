@@ -31,6 +31,9 @@
 				convex.query(api.exercises.getAllExercises, {})
 			]);
 			
+			console.log('Workout days data:', workoutDaysData);
+			console.log('Exercises data:', exercisesData);
+			
 			workoutDays = workoutDaysData || [];
 			exercises = exercisesData || [];
 		} catch (error) {
@@ -70,15 +73,15 @@
 		}
 
 		try {
-			// This would be a new mutation to add exercise to workout day with settings
-			// await convex.mutation(api.workoutDays.addExerciseToWorkoutDay, {
-			// 	workoutDayId: selectedWorkoutDay._id,
-			// 	exerciseId: newExercise.exerciseId,
-			// 	weight: newExercise.weight,
-			// 	reps: newExercise.reps,
-			// 	sets: newExercise.sets,
-			// 	weightIncrement: newExercise.weightIncrement
-			// });
+			await convex.mutation(api.workoutDays.addExerciseToWorkoutDay, {
+				userId: $user._id,
+				workoutDayId: selectedWorkoutDay._id,
+				exerciseId: newExercise.exerciseId,
+				weight: newExercise.weight,
+				reps: newExercise.reps,
+				sets: newExercise.sets,
+				weightIncrement: newExercise.weightIncrement
+			});
 			
 			alert('Exercise added successfully!');
 			closeAddExerciseModal();
@@ -126,21 +129,39 @@
 					<h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
 						Your Workout Days
 					</h2>
-					<div class="space-y-3">
-						{#each workoutDays as workoutDay}
-							<button
-								on:click={() => selectWorkoutDay(workoutDay)}
-								class="w-full text-left p-4 bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 hover:shadow-md transition-shadow {selectedWorkoutDay?._id === workoutDay._id ? 'ring-2 ring-blue-500' : ''}"
+					{#if workoutDays.length > 0}
+						<div class="space-y-3">
+							{#each workoutDays as workoutDay}
+								<button
+									on:click={() => selectWorkoutDay(workoutDay)}
+									class="w-full text-left p-4 bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 hover:shadow-md transition-shadow {selectedWorkoutDay?._id === workoutDay._id ? 'ring-2 ring-blue-500' : ''}"
+								>
+									<h3 class="font-medium text-gray-900 dark:text-white">
+										{workoutDay.name || 'Unnamed Workout'}
+									</h3>
+									<p class="text-sm text-gray-600 dark:text-gray-400">
+										{workoutDay.exercises?.length || 0} exercises
+									</p>
+								</button>
+							{/each}
+						</div>
+					{:else}
+						<div class="text-center py-8">
+							<div class="text-4xl mb-4">📋</div>
+							<h3 class="text-lg font-medium text-gray-900 dark:text-white mb-2">
+								No workout days yet
+							</h3>
+							<p class="text-gray-600 dark:text-gray-400 mb-4">
+								Create your first workout day to get started
+							</p>
+							<a
+								href="/"
+								class="inline-block px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
 							>
-								<h3 class="font-medium text-gray-900 dark:text-white">
-									{workoutDay.name}
-								</h3>
-								<p class="text-sm text-gray-600 dark:text-gray-400">
-									{workoutDay.exercises?.length || 0} exercises
-								</p>
-							</button>
-						{/each}
-					</div>
+								Create Workout Day
+							</a>
+						</div>
+					{/if}
 				</div>
 
 				<!-- Exercise Settings -->

@@ -5,12 +5,13 @@
 	import { api } from '../../../../convex/_generated/api';
 	import { convex } from '$lib/convex';
 	import ExerciseCard from '$lib/components/ExerciseCard.svelte';
-	import SimpleWorkoutModal from '$lib/components/SimpleWorkoutModal.svelte';
 
 	let workoutDay: any = null;
 	let isLoading = true;
-	let selectedExercise: any = null;
-	let showLogModal = false;
+	let isLogging = false;
+	let completedExercises: Set<string> = new Set();
+	let failedExercises: Set<string> = new Set();
+	let workoutHistory: any[] = [];
 
 	onMount(async () => {
 		await loadWorkoutDay();
@@ -25,8 +26,33 @@
 		try {
 			isLoading = true;
 			const workoutDayId = $page.params.id;
-			const days = await convex.query(api.workoutDays.getUserWorkoutDays, { userId: $user._id });
+			const [days, history] = await Promise.all([
+				convex.query(api.workoutDays.getUserWorkoutDays, { userId: $user._id }),
+				convex.query(api.exerciseLogs.getExerciseLogs, { 
+					userId: $user._id, 
+					workoutDayId: workoutDayId as any,
+					limit: 10
+				})
+			]);
+			
 			workoutDay = days?.find(day => day._id === workoutDayId);
+			workoutHistory = history || [];
+			
+			// Check if exercises were completed today
+			const today = new Date().toDateString();
+			completedExercises.clear();
+			failedExercises.clear();
+			
+			workoutHistory.forEach(log => {
+				const logDate = new Date(log.completedAt).toDateString();
+				if (logDate === today) {
+					if (log.notes === 'Completed successfully') {
+						completedExercises.add(log.exerciseId);
+					} else if (log.notes === 'Failed to complete') {
+						failedExercises.add(log.exerciseId);
+					}
+				}
+			});
 		} catch (error) {
 			console.error('Error loading workout day:', error);
 		} finally {
@@ -34,14 +60,70 @@
 		}
 	}
 
-	function startExercise(exercise: any) {
-		selectedExercise = exercise;
-		showLogModal = true;
+	async function markCompleted(exercise: any) {
+		if (!$user) {
+			alert('Please sign in to log exercises');
+			return;
+		}
+
+		try {
+			isLogging = true;
+			await convex.mutation(api.exerciseLogs.logExercise, {
+				userId: $user._id,
+				exerciseId: exercise._id as any,
+				workoutDayId: workoutDay._id,
+				weight: exercise.weight || 0,
+				reps: exercise.reps || 5,
+				sets: exercise.sets || 3,
+				weightIncrement: exercise.weightIncrement || 5,
+				notes: 'Completed successfully'
+			});
+			
+			// Update UI state immediately
+			completedExercises.add(exercise._id);
+			failedExercises.delete(exercise._id);
+			
+			// Reload workout day to show updated data
+			await loadWorkoutDay();
+		} catch (error) {
+			console.error('Error logging exercise:', error);
+			alert('Failed to log exercise');
+		} finally {
+			isLogging = false;
+		}
 	}
 
-	function handleExerciseLogged() {
-		showLogModal = false;
-		selectedExercise = null;
+	async function markFailed(exercise: any) {
+		if (!$user) {
+			alert('Please sign in to log exercises');
+			return;
+		}
+
+		try {
+			isLogging = true;
+			await convex.mutation(api.exerciseLogs.logExercise, {
+				userId: $user._id,
+				exerciseId: exercise._id as any,
+				workoutDayId: workoutDay._id,
+				weight: exercise.weight || 0,
+				reps: exercise.reps || 5,
+				sets: exercise.sets || 3,
+				weightIncrement: exercise.weightIncrement || 5,
+				notes: 'Failed to complete'
+			});
+			
+			// Update UI state immediately
+			failedExercises.add(exercise._id);
+			completedExercises.delete(exercise._id);
+			
+			// Reload workout day to show updated data
+			await loadWorkoutDay();
+		} catch (error) {
+			console.error('Error logging exercise:', error);
+			alert('Failed to log exercise');
+		} finally {
+			isLogging = false;
+		}
 	}
 
 	function goBack() {
@@ -147,14 +229,14 @@
 				{#if workoutDay.exerciseDetails && workoutDay.exerciseDetails.length > 0}
 					<div class="space-y-4">
 						{#each workoutDay.exerciseDetails as exercise}
-							<div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4">
-								<div class="flex items-center justify-between mb-3">
+							<div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+								<div class="flex items-center justify-between mb-4">
 									<div class="flex items-center space-x-3">
 										{#if exercise.icon}
-											<span class="text-2xl">{exercise.icon}</span>
+											<span class="text-3xl">{exercise.icon}</span>
 										{/if}
 										<div>
-											<h4 class="font-medium text-gray-900 dark:text-white">
+											<h4 class="text-lg font-semibold text-gray-900 dark:text-white">
 												{exercise.name}
 											</h4>
 											<p class="text-sm text-gray-600 dark:text-gray-400">
@@ -162,14 +244,45 @@
 											</p>
 										</div>
 									</div>
-									<div class="flex items-center space-x-2">
-										<button
-											on:click={() => startExercise(exercise)}
-											class="px-3 py-1 text-sm bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
-										>
-											Start
-										</button>
-									</div>
+								</div>
+								
+								<!-- Success/Failure Buttons -->
+								<div class="text-center">
+									{#if completedExercises.has(exercise._id)}
+										<div class="py-4">
+											<div class="text-4xl mb-2">✅</div>
+											<p class="text-green-600 dark:text-green-400 font-medium">
+												Completed! Next time: {exercise.weight + exercise.weightIncrement} lbs
+											</p>
+										</div>
+									{:else if failedExercises.has(exercise._id)}
+										<div class="py-4">
+											<div class="text-4xl mb-2">❌</div>
+											<p class="text-red-600 dark:text-red-400 font-medium">
+												Keep trying! Same weight next time.
+											</p>
+										</div>
+									{:else}
+										<p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
+											Did you complete your sets?
+										</p>
+										<div class="flex space-x-4 justify-center">
+											<button
+												on:click={() => markCompleted(exercise)}
+												disabled={isLogging}
+												class="px-8 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-lg font-medium"
+											>
+												{isLogging ? 'Logging...' : '✅ Yes'}
+											</button>
+											<button
+												on:click={() => markFailed(exercise)}
+												disabled={isLogging}
+												class="px-8 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-lg font-medium"
+											>
+												{isLogging ? 'Logging...' : '❌ No'}
+											</button>
+										</div>
+									{/if}
 								</div>
 							</div>
 						{/each}
@@ -198,25 +311,42 @@
 				<h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-6">
 					Recent Activity
 				</h3>
-				<div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
-					<p class="text-gray-600 dark:text-gray-400 text-center">
-						No recent activity yet. Start logging your exercises to see your progress here.
-					</p>
-				</div>
+				{#if workoutHistory.length > 0}
+					<div class="space-y-3">
+						{#each workoutHistory.slice(0, 5) as log}
+							<div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4">
+								<div class="flex items-center justify-between">
+									<div class="flex items-center space-x-3">
+										{#if log.notes === 'Completed successfully'}
+											<span class="text-green-600 dark:text-green-400 text-xl">✅</span>
+										{:else}
+											<span class="text-red-600 dark:text-red-400 text-xl">❌</span>
+										{/if}
+										<div>
+											<p class="font-medium text-gray-900 dark:text-white">
+												{log.exerciseDetails?.name || 'Exercise'}
+											</p>
+											<p class="text-sm text-gray-600 dark:text-gray-400">
+												{log.sets} × {log.reps} @ {log.weight} lbs
+											</p>
+										</div>
+									</div>
+									<div class="text-sm text-gray-500 dark:text-gray-400">
+										{new Date(log.completedAt).toLocaleDateString()}
+									</div>
+								</div>
+							</div>
+						{/each}
+					</div>
+				{:else}
+					<div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+						<p class="text-gray-600 dark:text-gray-400 text-center">
+							No recent activity yet. Start logging your exercises to see your progress here.
+						</p>
+					</div>
+				{/if}
 			</div>
 		{/if}
 	</main>
 </div>
 
-<!-- Simple Workout Modal -->
-{#if showLogModal && selectedExercise}
-	<SimpleWorkoutModal 
-		exercise={selectedExercise}
-		workoutDayId={workoutDay?._id}
-		on:close={() => {
-			showLogModal = false;
-			selectedExercise = null;
-		}}
-		on:logged={handleExerciseLogged}
-	/>
-{/if}

@@ -95,16 +95,79 @@ export const updateWorkoutDay = mutation({
   },
 });
 
+export const addExerciseToWorkoutDay = mutation({
+  args: {
+    userId: v.id("users"),
+    workoutDayId: v.id("workoutDays"),
+    exerciseId: v.id("exercises"),
+    weight: v.number(),
+    reps: v.number(),
+    sets: v.number(),
+    weightIncrement: v.number(),
+  },
+  handler: async (ctx, args) => {
+    const user = await ctx.db.get(args.userId);
+
+    if (!user) {
+      throw new Error("User not found");
+    }
+
+    const workoutDay = await ctx.db.get(args.workoutDayId);
+    if (!workoutDay || workoutDay.userId !== user._id) {
+      throw new Error("Workout day not found or not owned by user");
+    }
+
+    // Add exercise to the workout day
+    const updatedExercises = [...workoutDay.exercises, args.exerciseId];
+    
+    await ctx.db.patch(args.workoutDayId, {
+      exercises: updatedExercises,
+      updatedAt: Date.now(),
+    });
+
+    return args.workoutDayId;
+  },
+});
+
+export const updateExerciseInWorkoutDay = mutation({
+  args: {
+    userId: v.id("users"),
+    workoutDayId: v.id("workoutDays"),
+    exerciseId: v.id("exercises"),
+    weight: v.number(),
+    reps: v.number(),
+    sets: v.number(),
+    weightIncrement: v.number(),
+  },
+  handler: async (ctx, args) => {
+    const user = await ctx.db.get(args.userId);
+
+    if (!user) {
+      throw new Error("User not found");
+    }
+
+    const workoutDay = await ctx.db.get(args.workoutDayId);
+    if (!workoutDay || workoutDay.userId !== user._id) {
+      throw new Error("Workout day not found or not owned by user");
+    }
+
+    // For now, just update the workout day timestamp
+    // In a real app, you'd store exercise settings separately
+    await ctx.db.patch(args.workoutDayId, {
+      updatedAt: Date.now(),
+    });
+
+    return args.workoutDayId;
+  },
+});
+
 export const deleteWorkoutDay = mutation({
   args: {
+    userId: v.id("users"),
     workoutDayId: v.id("workoutDays"),
   },
   handler: async (ctx, args) => {
-    // For development, always use demo user
-    const user = await ctx.db
-      .query("users")
-      .withIndex("by_email", (q) => q.eq("email", "demo@example.com"))
-      .first();
+    const user = await ctx.db.get(args.userId);
 
     if (!user) {
       throw new Error("User not found");
