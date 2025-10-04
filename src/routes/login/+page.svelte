@@ -7,8 +7,6 @@
 	let email = '';
 	let password = '';
 	let name = '';
-	let weight = 150;
-	let weightIncrement = 5;
 	let isLogin = true;
 	let isLoading = false;
 	let error = '';
@@ -30,9 +28,7 @@
 			// Create or get user
 			const userId = await convex.mutation(api.users.createUser, {
 				name: name || email.split('@')[0],
-				email: email,
-				weight: weight,
-				weightIncrement: weightIncrement
+				email: email
 			});
 
 			// Get the created user data
@@ -120,32 +116,17 @@
 				</div>
 
 				<div>
-					<label for="weight" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
-						Current Weight (lbs)
+					<label for="password" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+						Password
 					</label>
 					<input
-						id="weight"
-						name="weight"
-						type="number"
-						bind:value={weight}
+						id="password"
+						name="password"
+						type="password"
+						bind:value={password}
 						required
 						class="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
-						placeholder="150"
-					/>
-				</div>
-
-				<div>
-					<label for="weightIncrement" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
-						Weight Increment (lbs per session)
-					</label>
-					<input
-						id="weightIncrement"
-						name="weightIncrement"
-						type="number"
-						bind:value={weightIncrement}
-						required
-						class="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
-						placeholder="5"
+						placeholder="Enter your password"
 					/>
 				</div>
 			</div>

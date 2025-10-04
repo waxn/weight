@@ -32,22 +32,7 @@ export const getAllExercises = query({
       .filter((q) => q.eq(q.field("isBuiltIn"), true))
       .collect();
 
-    // For development, always use demo user
-    const user = await ctx.db
-      .query("users")
-      .withIndex("by_email", (q) => q.eq("email", "demo@example.com"))
-      .first();
-
-    if (!user) {
-      return builtInExercises;
-    }
-
-    const userExercises = await ctx.db
-      .query("exercises")
-      .withIndex("by_creator", (q) => q.eq("createdBy", user._id))
-      .collect();
-
-    return [...builtInExercises, ...userExercises];
+    return builtInExercises;
   },
 });
 

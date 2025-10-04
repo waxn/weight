@@ -5,9 +5,10 @@ export default defineSchema({
   users: defineTable({
     name: v.string(),
     email: v.string(),
-    weight: v.optional(v.number()),
-    weightIncrement: v.optional(v.number()), // How much weight to add each session
     createdAt: v.number(),
+    // Legacy fields - will be removed after migration
+    weight: v.optional(v.union(v.number(), v.null())),
+    weightIncrement: v.optional(v.number()),
   }).index("by_email", ["email"]),
 
   workoutDays: defineTable({
@@ -37,6 +38,7 @@ export default defineSchema({
     weight: v.number(),
     reps: v.number(),
     sets: v.number(),
+    weightIncrement: v.number(), // How much weight to add next time
     notes: v.optional(v.string()),
     completedAt: v.number(),
   }).index("by_user", ["userId"])

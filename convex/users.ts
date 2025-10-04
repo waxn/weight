@@ -22,8 +22,6 @@ export const createUser = mutation({
   args: {
     name: v.string(),
     email: v.string(),
-    weight: v.optional(v.number()),
-    weightIncrement: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
     // Check if user already exists
@@ -39,8 +37,6 @@ export const createUser = mutation({
     const userId = await ctx.db.insert("users", {
       name: args.name,
       email: args.email,
-      weight: args.weight,
-      weightIncrement: args.weightIncrement || 5, // Default 5lb increment
       createdAt: Date.now(),
     });
 
@@ -48,27 +44,3 @@ export const createUser = mutation({
   },
 });
 
-export const updateUserWeight = mutation({
-  args: {
-    weight: v.number(),
-    weightIncrement: v.optional(v.number()),
-  },
-  handler: async (ctx, args) => {
-    // For development, always use demo user
-    const user = await ctx.db
-      .query("users")
-      .withIndex("by_email", (q) => q.eq("email", "demo@example.com"))
-      .first();
-
-    if (!user) {
-      throw new Error("User not found");
-    }
-
-    await ctx.db.patch(user._id, {
-      weight: args.weight,
-      weightIncrement: args.weightIncrement,
-    });
-
-    return user._id;
-  },
-});

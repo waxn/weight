@@ -3,54 +3,64 @@ import { v } from "convex/values";
 
 export const getExerciseLogs = query({
   args: {
+    userId: v.id("users"),
     exerciseId: v.optional(v.id("exercises")),
     workoutDayId: v.optional(v.id("workoutDays")),
     limit: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
-    // For development, always use demo user
-    const user = await ctx.db
-      .query("users")
-      .withIndex("by_email", (q) => q.eq("email", "demo@example.com"))
-      .first();
+    const user = await ctx.db.get(args.userId);
 
     if (!user) {
       return [];
     }
 
-    // For development, return empty array
-    // In production, implement proper database queries
-    return [];
+    let query = ctx.db
+      .query("exerciseLogs")
+      .withIndex("by_user", (q) => q.eq("userId", args.userId));
+
+    if (args.exerciseId) {
+      query = query.filter((q) => q.eq(q.field("exerciseId"), args.exerciseId));
+    }
+
+    if (args.workoutDayId) {
+      query = query.filter((q) => q.eq(q.field("workoutDayId"), args.workoutDayId));
+    }
+
+    const logs = await query
+      .order("desc")
+      .take(args.limit || 50);
+
+    return logs;
   },
 });
 
 export const logExercise = mutation({
   args: {
+    userId: v.id("users"),
     exerciseId: v.id("exercises"),
     workoutDayId: v.id("workoutDays"),
     weight: v.number(),
     reps: v.number(),
     sets: v.number(),
+    weightIncrement: v.number(),
     notes: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    // For development, always use demo user
-    const user = await ctx.db
-      .query("users")
-      .withIndex("by_email", (q) => q.eq("email", "demo@example.com"))
-      .first();
+    const user = await ctx.db.get(args.userId);
 
     if (!user) {
       throw new Error("User not found");
     }
 
     const logId = await ctx.db.insert("exerciseLogs", {
-      userId: user._id,
+      userId: args.userId,
       exerciseId: args.exerciseId,
       workoutDayId: args.workoutDayId,
       weight: args.weight,
       reps: args.reps,
       sets: args.sets,
+      weightIncrement: args.weightIncrement,
       notes: args.notes,
       completedAt: Date.now(),
     });
@@ -61,14 +71,11 @@ export const logExercise = mutation({
 
 export const getLastExerciseWeight = query({
   args: {
+    userId: v.id("users"),
     exerciseId: v.id("exercises"),
   },
   handler: async (ctx, args) => {
-    // For development, always use demo user
-    const user = await ctx.db
-      .query("users")
-      .withIndex("by_email", (q) => q.eq("email", "demo@example.com"))
-      .first();
+    const user = await ctx.db.get(args.userId);
 
     if (!user) {
       return null;
@@ -76,7 +83,8 @@ export const getLastExerciseWeight = query({
 
     const lastLog = await ctx.db
       .query("exerciseLogs")
-      .withIndex("by_exercise", (q) => q.eq("exerciseId", args.exerciseId))
+      .withIndex("by_user", (q) => q.eq("userId", args.userId))
+      .filter((q) => q.eq(q.field("exerciseId"), args.exerciseId))
       .order("desc")
       .first();
 
@@ -86,14 +94,11 @@ export const getLastExerciseWeight = query({
 
 export const getSuggestedWeight = query({
   args: {
+    userId: v.id("users"),
     exerciseId: v.id("exercises"),
   },
   handler: async (ctx, args) => {
-    // For development, always use demo user
-    const user = await ctx.db
-      .query("users")
-      .withIndex("by_email", (q) => q.eq("email", "demo@example.com"))
-      .first();
+    const user = await ctx.db.get(args.userId);
 
     if (!user) {
       return null;
@@ -101,7 +106,8 @@ export const getSuggestedWeight = query({
 
     const lastLog = await ctx.db
       .query("exerciseLogs")
-      .withIndex("by_exercise", (q) => q.eq("exerciseId", args.exerciseId))
+      .withIndex("by_user", (q) => q.eq("userId", args.userId))
+      .filter((q) => q.eq(q.field("exerciseId"), args.exerciseId))
       .order("desc")
       .first();
 
@@ -109,8 +115,8 @@ export const getSuggestedWeight = query({
       return null;
     }
 
-    // Suggest weight based on user's weight increment setting
-    const suggestedWeight = lastLog.weight + (user.weightIncrement || 5);
+    // Suggest weight based on the last log's weight increment
+    const suggestedWeight = lastLog.weight + lastLog.weightIncrement;
     return suggestedWeight;
   },
 });

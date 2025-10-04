@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { createEventDispatcher, onMount } from 'svelte';
+	import { user } from '$lib/stores';
 	import { api } from '../../../convex/_generated/api';
 	import { convex } from '$lib/convex';
 
@@ -11,6 +12,7 @@
 	let weight = 0;
 	let reps = 0;
 	let sets = 1;
+	let weightIncrement = 5;
 	let notes = '';
 	let isLoading = true;
 	let isLogging = false;
@@ -22,23 +24,33 @@
 	});
 
 	async function loadExerciseData() {
+		if (!$user) {
+			isLoading = false;
+			return;
+		}
+
 		try {
 			isLoading = true;
 			
 			// Get suggested weight
 			const suggested = await convex.query(api.exerciseLogs.getSuggestedWeight, {
+				userId: $user._id,
 				exerciseId: exercise._id as any
 			});
 			suggestedWeight = suggested || 0;
 
 			// Get last weight
 			const last = await convex.query(api.exerciseLogs.getLastExerciseWeight, {
+				userId: $user._id,
 				exerciseId: exercise._id as any
 			});
 			lastWeight = last || 0;
 
-			// Set initial weight
-			weight = suggestedWeight || lastWeight || 0;
+			// Set initial values from exercise settings
+			weight = exercise.weight || suggestedWeight || lastWeight || 0;
+			reps = exercise.reps || 5;
+			sets = exercise.sets || 3;
+			weightIncrement = exercise.weightIncrement || 5;
 		} catch (error) {
 			console.error('Error loading exercise data:', error);
 		} finally {
@@ -47,6 +59,11 @@
 	}
 
 	async function logExercise() {
+		if (!$user) {
+			alert('Please sign in to log exercises');
+			return;
+		}
+
 		if (weight <= 0 || reps <= 0 || sets <= 0) {
 			alert('Please enter valid values for weight, reps, and sets');
 			return;
@@ -55,11 +72,13 @@
 		try {
 			isLogging = true;
 			await convex.mutation(api.exerciseLogs.logExercise, {
+				userId: $user._id,
 				exerciseId: exercise._id as any,
 				workoutDayId: workoutDayId as any,
 				weight,
 				reps,
 				sets,
+				weightIncrement,
 				notes: notes.trim() || undefined
 			});
 			
@@ -168,8 +187,8 @@
 					{/if}
 				</div>
 
-				<!-- Reps and Sets -->
-				<div class="grid grid-cols-2 gap-4 mb-6">
+				<!-- Reps, Sets, and Increment -->
+				<div class="grid grid-cols-3 gap-4 mb-6">
 					<div>
 						<label for="reps" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
 							Reps
@@ -191,6 +210,19 @@
 							type="number"
 							bind:value={sets}
 							min="1"
+							class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+						/>
+					</div>
+					<div>
+						<label for="weightIncrement" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+							Increment (lbs)
+						</label>
+						<input
+							id="weightIncrement"
+							type="number"
+							bind:value={weightIncrement}
+							min="1"
+							step="2.5"
 							class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
 						/>
 					</div>

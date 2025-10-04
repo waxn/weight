@@ -5,7 +5,7 @@
 	import { api } from '../../../../convex/_generated/api';
 	import { convex } from '$lib/convex';
 	import ExerciseCard from '$lib/components/ExerciseCard.svelte';
-	import LogExerciseModal from '$lib/components/LogExerciseModal.svelte';
+	import SimpleWorkoutModal from '$lib/components/SimpleWorkoutModal.svelte';
 
 	let workoutDay: any = null;
 	let isLoading = true;
@@ -132,17 +132,46 @@
 
 			<!-- Exercises -->
 			<div class="mb-8">
-				<h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-6">
-					Exercises
-				</h3>
+				<div class="flex justify-between items-center mb-6">
+					<h3 class="text-xl font-semibold text-gray-900 dark:text-white">
+						Exercises
+					</h3>
+					<a
+						href="/workout-settings"
+						class="text-sm text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
+					>
+						Configure Settings
+					</a>
+				</div>
 
 				{#if workoutDay.exerciseDetails && workoutDay.exerciseDetails.length > 0}
-					<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+					<div class="space-y-4">
 						{#each workoutDay.exerciseDetails as exercise}
-							<ExerciseCard 
-								{exercise} 
-								on:start={() => startExercise(exercise)}
-							/>
+							<div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4">
+								<div class="flex items-center justify-between mb-3">
+									<div class="flex items-center space-x-3">
+										{#if exercise.icon}
+											<span class="text-2xl">{exercise.icon}</span>
+										{/if}
+										<div>
+											<h4 class="font-medium text-gray-900 dark:text-white">
+												{exercise.name}
+											</h4>
+											<p class="text-sm text-gray-600 dark:text-gray-400">
+												{exercise.sets || 3} × {exercise.reps || 5} @ {exercise.weight || 0} lbs
+											</p>
+										</div>
+									</div>
+									<div class="flex items-center space-x-2">
+										<button
+											on:click={() => startExercise(exercise)}
+											class="px-3 py-1 text-sm bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
+										>
+											Start
+										</button>
+									</div>
+								</div>
+							</div>
 						{/each}
 					</div>
 				{:else}
@@ -151,9 +180,15 @@
 						<h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-2">
 							No exercises added
 						</h3>
-						<p class="text-gray-600 dark:text-gray-400">
+						<p class="text-gray-600 dark:text-gray-400 mb-4">
 							This workout day doesn't have any exercises yet.
 						</p>
+						<a
+							href="/workout-settings"
+							class="inline-block px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+						>
+							Add Exercises
+						</a>
 					</div>
 				{/if}
 			</div>
@@ -173,9 +208,9 @@
 	</main>
 </div>
 
-<!-- Log Exercise Modal -->
+<!-- Simple Workout Modal -->
 {#if showLogModal && selectedExercise}
-	<LogExerciseModal 
+	<SimpleWorkoutModal 
 		exercise={selectedExercise}
 		workoutDayId={workoutDay?._id}
 		on:close={() => {
