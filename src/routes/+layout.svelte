@@ -15,12 +15,27 @@
 		if (savedTheme !== null) {
 			darkMode.set(savedTheme === 'true');
 		} else {
-			// Default to light mode if no preference saved
-			darkMode.set(false);
+			// Auto-detect system theme preference
+			const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+			darkMode.set(prefersDark);
 		}
-		
+
 		// Apply dark mode immediately
 		document.documentElement.classList.toggle('dark', $darkMode);
+
+		// Listen for system theme changes
+		const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+		const handleThemeChange = (e: MediaQueryListEvent) => {
+			// Only auto-update if user hasn't manually set a preference
+			const savedTheme = localStorage.getItem('darkMode');
+			if (savedTheme === null) {
+				darkMode.set(e.matches);
+			}
+		};
+		mediaQuery.addEventListener('change', handleThemeChange);
+
+		// Cleanup listener on unmount
+		return () => mediaQuery.removeEventListener('change', handleThemeChange);
 
 		// Load user from localStorage session
 		const savedUser = localStorage.getItem('user');
