@@ -4,13 +4,16 @@ import { v } from "convex/values";
 export const getCurrentUser = query({
   args: {},
   handler: async (ctx) => {
-    // For development, return a demo user
-    // In production, implement proper authentication
-    const user = await ctx.db
-      .query("users")
-      .withIndex("by_email", (q) => q.eq("email", "demo@example.com"))
-      .first();
+    // For now, return null - no automatic user creation
+    // In production, implement proper authentication with Convex Auth
+    return null;
+  },
+});
 
+export const getUserById = query({
+  args: { userId: v.id("users") },
+  handler: async (ctx, args) => {
+    const user = await ctx.db.get(args.userId);
     return user;
   },
 });
@@ -23,10 +26,10 @@ export const createUser = mutation({
     weightIncrement: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
-    // For development, always use demo user
+    // Check if user already exists
     const existingUser = await ctx.db
       .query("users")
-      .withIndex("by_email", (q) => q.eq("email", "demo@example.com"))
+      .withIndex("by_email", (q) => q.eq("email", args.email))
       .first();
 
     if (existingUser) {
@@ -35,7 +38,7 @@ export const createUser = mutation({
 
     const userId = await ctx.db.insert("users", {
       name: args.name,
-      email: "demo@example.com", // Always use demo email
+      email: args.email,
       weight: args.weight,
       weightIncrement: args.weightIncrement || 5, // Default 5lb increment
       createdAt: Date.now(),

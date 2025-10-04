@@ -17,10 +17,15 @@
 	});
 
 	async function loadWorkoutDay() {
+		if (!$user) {
+			isLoading = false;
+			return;
+		}
+		
 		try {
 			isLoading = true;
 			const workoutDayId = $page.params.id;
-			const days = await convex.query(api.workoutDays.getUserWorkoutDays, {});
+			const days = await convex.query(api.workoutDays.getUserWorkoutDays, { userId: $user._id });
 			workoutDay = days?.find(day => day._id === workoutDayId);
 		} catch (error) {
 			console.error('Error loading workout day:', error);

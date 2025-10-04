@@ -15,14 +15,18 @@
 		// Initialize built-in exercises
 		await convex.mutation(api.exercises.initializeBuiltInExercises, {});
 		
-		// Load workout days
-		loadWorkoutDays();
+		// Load workout days only if user is logged in
+		if ($user) {
+			loadWorkoutDays();
+		}
 	});
 
 	async function loadWorkoutDays() {
+		if (!$user) return;
+		
 		try {
 			isLoading = true;
-			const days = await convex.query(api.workoutDays.getUserWorkoutDays, {});
+			const days = await convex.query(api.workoutDays.getUserWorkoutDays, { userId: $user._id });
 			workoutDays = days || [];
 		} catch (error) {
 			console.error('Error loading workout days:', error);
@@ -31,24 +35,16 @@
 		}
 	}
 
-	async function handleSignIn() {
-		// For now, create a demo user
-		try {
-			await convex.mutation(api.users.createUser, {
-				name: 'Demo User',
-				email: 'demo@example.com',
-				weight: 150,
-				weightIncrement: 5
-			});
-			// Reload the page to get the user
-			window.location.reload();
-		} catch (error) {
-			console.error('Error creating user:', error);
-		}
+	function handleSignIn() {
+		// Navigate to login page
+		window.location.href = '/login';
 	}
 
 	async function handleSignOut() {
-		// For now, just reload the page
+		// Clear user session
+		localStorage.removeItem('user');
+		user.set(null);
+		// Reload the page
 		window.location.reload();
 	}
 

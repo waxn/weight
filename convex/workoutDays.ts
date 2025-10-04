@@ -2,13 +2,9 @@ import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
 
 export const getUserWorkoutDays = query({
-  args: {},
-  handler: async (ctx) => {
-    // For development, always use demo user
-    const user = await ctx.db
-      .query("users")
-      .withIndex("by_email", (q) => q.eq("email", "demo@example.com"))
-      .first();
+  args: { userId: v.id("users") },
+  handler: async (ctx, args) => {
+    const user = await ctx.db.get(args.userId);
 
     if (!user) {
       return [];
@@ -40,16 +36,13 @@ export const getUserWorkoutDays = query({
 
 export const createWorkoutDay = mutation({
   args: {
+    userId: v.id("users"),
     name: v.string(),
     description: v.optional(v.string()),
     exerciseIds: v.array(v.id("exercises")),
   },
   handler: async (ctx, args) => {
-    // For development, always use demo user
-    const user = await ctx.db
-      .query("users")
-      .withIndex("by_email", (q) => q.eq("email", "demo@example.com"))
-      .first();
+    const user = await ctx.db.get(args.userId);
 
     if (!user) {
       throw new Error("User not found");

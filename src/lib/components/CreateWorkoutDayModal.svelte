@@ -2,6 +2,7 @@
 	import { createEventDispatcher, onMount } from 'svelte';
 	import { api } from '../../../convex/_generated/api';
 	import { convex } from '$lib/convex';
+	import { user } from '$lib/stores';
 	import ExerciseIcon from './ExerciseIcon.svelte';
 
 	const dispatch = createEventDispatcher();
@@ -49,9 +50,18 @@
 			return;
 		}
 
+		// Get current user from the store
+		const currentUser = $user;
+		
+		if (!currentUser) {
+			alert('You must be logged in to create a workout day');
+			return;
+		}
+
 		try {
 			isCreating = true;
 			await convex.mutation(api.workoutDays.createWorkoutDay, {
+				userId: currentUser._id,
 				name: name.trim(),
 				description: description.trim() || undefined,
 				exerciseIds: selectedExercises.map(e => e._id)

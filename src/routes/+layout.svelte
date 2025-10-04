@@ -14,29 +14,28 @@
 		const savedTheme = localStorage.getItem('darkMode');
 		if (savedTheme !== null) {
 			darkMode.set(savedTheme === 'true');
+		} else {
+			// Default to light mode if no preference saved
+			darkMode.set(false);
 		}
+		
+		// Apply dark mode immediately
+		document.documentElement.classList.toggle('dark', $darkMode);
 
-		// Load user from Convex
-		try {
-			const userData = await convex.query(api.users.getCurrentUser, {});
-			if (userData) {
+		// Load user from localStorage session
+		const savedUser = localStorage.getItem('user');
+		if (savedUser) {
+			try {
+				const userData = JSON.parse(savedUser);
 				currentUser = userData;
 				user.set(userData);
-			} else {
-				// Create demo user if none exists
-				await convex.mutation(api.users.createUser, {
-					name: 'Demo User',
-					email: 'demo@example.com',
-					weight: 150,
-					weightIncrement: 5
-				});
-				// Reload to get the user
-				const newUserData = await convex.query(api.users.getCurrentUser, {});
-				currentUser = newUserData;
-				user.set(newUserData);
+			} catch (error) {
+				console.log('Error parsing saved user:', error);
+				localStorage.removeItem('user');
+				currentUser = null;
+				user.set(null);
 			}
-		} catch (error) {
-			console.log('Error loading user:', error);
+		} else {
 			currentUser = null;
 			user.set(null);
 		}
