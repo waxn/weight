@@ -1,0 +1,372 @@
+<script lang="ts">
+	import { onMount } from 'svelte';
+	import { user } from '$lib/stores';
+	import { api } from '../../../convex/_generated/api';
+	import { convex } from '$lib/convex';
+
+	let exerciseLogs: any[] = [];
+	let workoutDays: any[] = [];
+	let isLoading = true;
+	let selectedTimeframe = '30'; // days
+	let weightData: any[] = [];
+	let stats = {
+		totalWorkouts: 0,
+		totalExercises: 0,
+		averageWeight: 0,
+		strengthGain: 0,
+		mostUsedExercise: '',
+		workoutStreak: 0
+	};
+
+	onMount(async () => {
+		await loadStatsData();
+	});
+
+	async function loadStatsData() {
+		if (!$user) {
+			isLoading = false;
+			return;
+		}
+		
+		try {
+			isLoading = true;
+			
+			// Load exercise logs and workout days
+			const [logs, days] = await Promise.all([
+				convex.query(api.exerciseLogs.getExerciseLogs, { 
+					userId: $user._id, 
+					limit: 1000 
+				}),
+				convex.query(api.workoutDays.getUserWorkoutDays, { userId: $user._id })
+			]);
+			
+			exerciseLogs = logs || [];
+			workoutDays = days || [];
+			
+			// Process data for charts and stats
+			processWeightData();
+			calculateStats();
+		} catch (error) {
+			console.error('Error loading stats data:', error);
+		} finally {
+			isLoading = false;
+		}
+	}
+
+	function processWeightData() {
+		// Group exercise logs by date and calculate average weight per day
+		const weightByDate = new Map();
+		
+		exerciseLogs.forEach(log => {
+			const date = new Date(log.completedAt).toDateString();
+			if (!weightByDate.has(date)) {
+				weightByDate.set(date, []);
+			}
+			weightByDate.get(date).push(log.weight);
+		});
+		
+		// Convert to chart data format
+		weightData = Array.from(weightByDate.entries())
+			.map(([date, weights]) => ({
+				date: new Date(date),
+				averageWeight: weights.reduce((a: number, b: number) => a + b, 0) / weights.length,
+				totalWeight: weights.reduce((a: number, b: number) => a + b, 0)
+			}))
+			.sort((a, b) => a.date.getTime() - b.date.getTime())
+			.slice(-parseInt(selectedTimeframe));
+	}
+
+	function calculateStats() {
+		// Calculate various statistics
+		const uniqueWorkoutDays = new Set(exerciseLogs.map(log => log.workoutDayId));
+		stats.totalWorkouts = uniqueWorkoutDays.size;
+		stats.totalExercises = exerciseLogs.length;
+		
+		if (exerciseLogs.length > 0) {
+			stats.averageWeight = exerciseLogs.reduce((sum, log) => sum + log.weight, 0) / exerciseLogs.length;
+		}
+		
+		// Calculate strength gain (difference between first and last workout)
+		if (weightData.length >= 2) {
+			stats.strengthGain = weightData[weightData.length - 1].averageWeight - weightData[0].averageWeight;
+		}
+		
+		// Find most used exercise
+		const exerciseCounts = new Map();
+		exerciseLogs.forEach(log => {
+			const exerciseName = log.exerciseDetails?.name || 'Unknown';
+			exerciseCounts.set(exerciseName, (exerciseCounts.get(exerciseName) || 0) + 1);
+		});
+		
+		if (exerciseCounts.size > 0) {
+			stats.mostUsedExercise = Array.from(exerciseCounts.entries())
+				.sort((a, b) => b[1] - a[1])[0][0];
+		}
+		
+		// Calculate workout streak (simplified)
+		stats.workoutStreak = calculateWorkoutStreak();
+	}
+
+	function calculateWorkoutStreak() {
+		// Simple streak calculation based on consecutive days with workouts
+		const workoutDates = Array.from(new Set(
+			exerciseLogs.map(log => new Date(log.completedAt).toDateString())
+		)).sort().reverse();
+		
+		let streak = 0;
+		const today = new Date();
+		let currentDate = new Date(today);
+		
+		for (let i = 0; i < 30; i++) { // Check last 30 days
+			const dateString = currentDate.toDateString();
+			if (workoutDates.includes(dateString)) {
+				streak++;
+			} else {
+				break;
+			}
+			currentDate.setDate(currentDate.getDate() - 1);
+		}
+		
+		return streak;
+	}
+
+	function changeTimeframe(timeframe: string) {
+		selectedTimeframe = timeframe;
+		processWeightData();
+	}
+
+	function goBack() {
+		window.history.back();
+	}
+
+	function formatDate(date: Date) {
+		return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+	}
+
+	function formatWeight(weight: number) {
+		return Math.round(weight * 10) / 10;
+	}
+</script>
+
+<svelte:head>
+	<title>Stats - Workout Tracker</title>
+</svelte:head>
+
+<div class="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
+	<!-- Header -->
+	<header class="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700">
+		<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+			<div class="flex items-center justify-between h-16">
+				<div class="flex items-center">
+					<button
+						on:click={goBack}
+						class="mr-4 p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+						aria-label="Go back"
+					>
+						<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+						</svg>
+					</button>
+					<h1 class="text-xl font-bold text-gray-900 dark:text-white">Workout Statistics</h1>
+				</div>
+				<div class="flex items-center space-x-2">
+					<select
+						bind:value={selectedTimeframe}
+						on:change={(e) => changeTimeframe(e.target.value)}
+						class="px-3 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+					>
+						<option value="7">Last 7 days</option>
+						<option value="30">Last 30 days</option>
+						<option value="90">Last 90 days</option>
+						<option value="365">Last year</option>
+					</select>
+				</div>
+			</div>
+		</div>
+	</header>
+
+	<!-- Main Content -->
+	<main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+		{#if isLoading}
+			<div class="flex justify-center items-center py-12">
+				<div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+			</div>
+		{:else if !$user}
+			<div class="text-center py-12">
+				<div class="text-4xl mb-4">🔒</div>
+				<h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+					Please sign in to view statistics
+				</h2>
+				<p class="text-gray-600 dark:text-gray-400 mb-6">
+					Sign in to track your workout progress and view detailed statistics.
+				</p>
+				<a
+					href="/login"
+					class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+				>
+					Sign In
+				</a>
+			</div>
+		{:else}
+			<div class="space-y-8">
+				<!-- Stats Overview -->
+				<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+					<div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+						<div class="flex items-center">
+							<div class="flex-shrink-0">
+								<svg class="w-8 h-8 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+								</svg>
+							</div>
+							<div class="ml-4">
+								<p class="text-sm font-medium text-gray-600 dark:text-gray-400">Total Workouts</p>
+								<p class="text-2xl font-bold text-gray-900 dark:text-white">{stats.totalWorkouts}</p>
+							</div>
+						</div>
+					</div>
+
+					<div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+						<div class="flex items-center">
+							<div class="flex-shrink-0">
+								<svg class="w-8 h-8 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
+								</svg>
+							</div>
+							<div class="ml-4">
+								<p class="text-sm font-medium text-gray-600 dark:text-gray-400">Workout Streak</p>
+								<p class="text-2xl font-bold text-gray-900 dark:text-white">{stats.workoutStreak} days</p>
+							</div>
+						</div>
+					</div>
+
+					<div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+						<div class="flex items-center">
+							<div class="flex-shrink-0">
+								<svg class="w-8 h-8 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
+								</svg>
+							</div>
+							<div class="ml-4">
+								<p class="text-sm font-medium text-gray-600 dark:text-gray-400">Avg Weight</p>
+								<p class="text-2xl font-bold text-gray-900 dark:text-white">{formatWeight(stats.averageWeight)} lbs</p>
+							</div>
+						</div>
+					</div>
+
+					<div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+						<div class="flex items-center">
+							<div class="flex-shrink-0">
+								<svg class="w-8 h-8 text-orange-600 dark:text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+								</svg>
+							</div>
+							<div class="ml-4">
+								<p class="text-sm font-medium text-gray-600 dark:text-gray-400">Total Exercises</p>
+								<p class="text-2xl font-bold text-gray-900 dark:text-white">{stats.totalExercises}</p>
+							</div>
+						</div>
+					</div>
+				</div>
+
+				<!-- Weight Progress Chart -->
+				<div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+					<div class="flex justify-between items-center mb-6">
+						<h2 class="text-xl font-semibold text-gray-900 dark:text-white">Weight Progress</h2>
+						<div class="text-sm text-gray-600 dark:text-gray-400">
+							{stats.strengthGain > 0 ? '+' : ''}{formatWeight(stats.strengthGain)} lbs change
+						</div>
+					</div>
+					
+					{#if weightData.length > 0}
+						<div class="h-64 flex items-end justify-between space-x-1">
+							{#each weightData as dataPoint, index}
+								<div class="flex-1 flex flex-col items-center">
+									<div 
+										class="bg-blue-500 rounded-t w-full min-h-2 transition-all duration-300 hover:bg-blue-600"
+										style="height: {Math.max(20, (dataPoint.averageWeight / Math.max(...weightData.map(d => d.averageWeight))) * 200)}px"
+										title="{formatDate(dataPoint.date)}: {formatWeight(dataPoint.averageWeight)} lbs"
+									></div>
+									{#if index % Math.ceil(weightData.length / 5) === 0}
+										<span class="text-xs text-gray-500 dark:text-gray-400 mt-2 transform -rotate-45 origin-left">
+											{formatDate(dataPoint.date)}
+										</span>
+									{/if}
+								</div>
+							{/each}
+						</div>
+					{:else}
+						<div class="h-64 flex items-center justify-center text-gray-500 dark:text-gray-400">
+							<div class="text-center">
+								<svg class="w-12 h-12 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+								</svg>
+								<p>No workout data available</p>
+								<p class="text-sm">Start logging exercises to see your progress</p>
+							</div>
+						</div>
+					{/if}
+				</div>
+
+				<!-- Additional Stats -->
+				<div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+					<!-- Most Used Exercise -->
+					<div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+						<h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Most Used Exercise</h3>
+						{#if stats.mostUsedExercise}
+							<div class="flex items-center space-x-3">
+								<div class="w-12 h-12 bg-blue-100 dark:bg-blue-900 rounded-lg flex items-center justify-center">
+									<svg class="w-6 h-6 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+										<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+									</svg>
+								</div>
+								<div>
+									<p class="font-medium text-gray-900 dark:text-white">{stats.mostUsedExercise}</p>
+									<p class="text-sm text-gray-600 dark:text-gray-400">Your favorite exercise</p>
+								</div>
+							</div>
+						{:else}
+							<p class="text-gray-500 dark:text-gray-400">No exercise data available</p>
+						{/if}
+					</div>
+
+					<!-- Recent Activity -->
+					<div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+						<h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Recent Activity</h3>
+						{#if exerciseLogs.length > 0}
+							<div class="space-y-3">
+								{#each exerciseLogs.slice(0, 5) as log}
+									<div class="flex items-center justify-between">
+										<div class="flex items-center space-x-3">
+											{#if log.notes === 'Completed successfully'}
+												<svg class="w-5 h-5 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+													<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+												</svg>
+											{:else}
+												<svg class="w-5 h-5 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+													<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+												</svg>
+											{/if}
+											<div>
+												<p class="text-sm font-medium text-gray-900 dark:text-white">
+													{log.exerciseDetails?.name || 'Exercise'}
+												</p>
+												<p class="text-xs text-gray-600 dark:text-gray-400">
+													{log.sets} × {log.reps} @ {log.weight} lbs
+												</p>
+											</div>
+										</div>
+										<span class="text-xs text-gray-500 dark:text-gray-400">
+											{new Date(log.completedAt).toLocaleDateString()}
+										</span>
+									</div>
+								{/each}
+							</div>
+						{:else}
+							<p class="text-gray-500 dark:text-gray-400">No recent activity</p>
+						{/if}
+					</div>
+				</div>
+			</div>
+		{/if}
+	</main>
+</div>

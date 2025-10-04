@@ -179,11 +179,81 @@ export const updateExerciseInWorkoutDay = mutation({
       throw new Error("Workout day not found or not owned by user");
     }
 
-    // For now, just update the workout day timestamp
-    // In a real app, you'd store exercise settings separately
+    // Find the existing exercise settings
+    const existingSettings = await ctx.db
+      .query("workoutDayExercises")
+      .withIndex("by_workout_day", (q) => q.eq("workoutDayId", args.workoutDayId))
+      .filter((q) => q.eq(q.field("exerciseId"), args.exerciseId))
+      .first();
+
+    if (existingSettings) {
+      // Update existing settings
+      await ctx.db.patch(existingSettings._id, {
+        weight: args.weight,
+        reps: args.reps,
+        sets: args.sets,
+        weightIncrement: args.weightIncrement,
+        updatedAt: Date.now(),
+      });
+    } else {
+      // Create new settings if they don't exist
+      await ctx.db.insert("workoutDayExercises", {
+        workoutDayId: args.workoutDayId,
+        exerciseId: args.exerciseId,
+        weight: args.weight,
+        reps: args.reps,
+        sets: args.sets,
+        weightIncrement: args.weightIncrement,
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+      });
+    }
+
+    // Update workout day timestamp
     await ctx.db.patch(args.workoutDayId, {
       updatedAt: Date.now(),
     });
+
+    return args.workoutDayId;
+  },
+});
+
+export const removeExerciseFromWorkoutDay = mutation({
+  args: {
+    userId: v.id("users"),
+    workoutDayId: v.id("workoutDays"),
+    exerciseId: v.id("exercises"),
+  },
+  handler: async (ctx, args) => {
+    const user = await ctx.db.get(args.userId);
+
+    if (!user) {
+      throw new Error("User not found");
+    }
+
+    const workoutDay = await ctx.db.get(args.workoutDayId);
+    if (!workoutDay || workoutDay.userId !== user._id) {
+      throw new Error("Workout day not found or not owned by user");
+    }
+
+    // Remove exercise from the workout day
+    const updatedExercises = workoutDay.exercises.filter((id: string) => id !== args.exerciseId);
+    
+    await ctx.db.patch(args.workoutDayId, {
+      exercises: updatedExercises,
+      updatedAt: Date.now(),
+    });
+
+    // Remove exercise settings
+    const exerciseSettings = await ctx.db
+      .query("workoutDayExercises")
+      .withIndex("by_workout_day", (q) => q.eq("workoutDayId", args.workoutDayId))
+      .filter((q) => q.eq(q.field("exerciseId"), args.exerciseId))
+      .first();
+
+    if (exerciseSettings) {
+      await ctx.db.delete(exerciseSettings._id);
+    }
 
     return args.workoutDayId;
   },
