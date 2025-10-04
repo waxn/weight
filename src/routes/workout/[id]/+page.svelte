@@ -126,6 +126,11 @@
 		}
 	}
 
+	function undoExercise(exercise: any) {
+		completedExercises.delete(exercise._id);
+		failedExercises.delete(exercise._id);
+	}
+
 	function goBack() {
 		window.history.back();
 	}
@@ -250,17 +255,37 @@
 								<div class="text-center">
 									{#if completedExercises.has(exercise._id)}
 										<div class="py-4">
-											<div class="text-4xl mb-2">✅</div>
-											<p class="text-green-600 dark:text-green-400 font-medium">
+											<div class="flex items-center justify-center mb-2">
+												<svg class="w-8 h-8 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+													<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+												</svg>
+											</div>
+											<p class="text-green-600 dark:text-green-400 font-medium mb-3">
 												Completed! Next time: {exercise.weight + exercise.weightIncrement} lbs
 											</p>
+											<button
+												on:click={() => undoExercise(exercise)}
+												class="px-4 py-2 text-sm bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+											>
+												Undo
+											</button>
 										</div>
 									{:else if failedExercises.has(exercise._id)}
 										<div class="py-4">
-											<div class="text-4xl mb-2">❌</div>
-											<p class="text-red-600 dark:text-red-400 font-medium">
+											<div class="flex items-center justify-center mb-2">
+												<svg class="w-8 h-8 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+													<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+												</svg>
+											</div>
+											<p class="text-red-600 dark:text-red-400 font-medium mb-3">
 												Keep trying! Same weight next time.
 											</p>
+											<button
+												on:click={() => undoExercise(exercise)}
+												class="px-4 py-2 text-sm bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+											>
+												Undo
+											</button>
 										</div>
 									{:else}
 										<p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
@@ -270,16 +295,30 @@
 											<button
 												on:click={() => markCompleted(exercise)}
 												disabled={isLogging}
-												class="px-8 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-lg font-medium"
+												class="px-8 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-lg font-medium flex items-center space-x-2"
 											>
-												{isLogging ? 'Logging...' : '✅ Yes'}
+												{#if isLogging}
+													<span>Logging...</span>
+												{:else}
+													<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+														<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+													</svg>
+													<span>Yes</span>
+												{/if}
 											</button>
 											<button
 												on:click={() => markFailed(exercise)}
 												disabled={isLogging}
-												class="px-8 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-lg font-medium"
+												class="px-8 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-lg font-medium flex items-center space-x-2"
 											>
-												{isLogging ? 'Logging...' : '❌ No'}
+												{#if isLogging}
+													<span>Logging...</span>
+												{:else}
+													<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+														<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+													</svg>
+													<span>No</span>
+												{/if}
 											</button>
 										</div>
 									{/if}
@@ -289,7 +328,11 @@
 					</div>
 				{:else}
 					<div class="text-center py-12">
-						<div class="text-4xl mb-4">🏋️‍♂️</div>
+						<div class="flex justify-center mb-4">
+							<svg class="w-12 h-12 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+							</svg>
+						</div>
 						<h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-2">
 							No exercises added
 						</h3>
@@ -318,9 +361,13 @@
 								<div class="flex items-center justify-between">
 									<div class="flex items-center space-x-3">
 										{#if log.notes === 'Completed successfully'}
-											<span class="text-green-600 dark:text-green-400 text-xl">✅</span>
+											<svg class="w-6 h-6 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+												<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+											</svg>
 										{:else}
-											<span class="text-red-600 dark:text-red-400 text-xl">❌</span>
+											<svg class="w-6 h-6 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+												<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+											</svg>
 										{/if}
 										<div>
 											<p class="font-medium text-gray-900 dark:text-white">

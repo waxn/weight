@@ -69,7 +69,10 @@
 		<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 			<div class="flex justify-between items-center h-16">
 				<div class="flex items-center">
-					<h1 class="text-xl font-bold text-gray-900 dark:text-white">💪 Workout Tracker</h1>
+					<svg class="w-6 h-6 text-blue-600 dark:text-blue-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+					</svg>
+					<h1 class="text-xl font-bold text-gray-900 dark:text-white">Workout Tracker</h1>
 				</div>
 				<div class="flex items-center space-x-4">
 					<DarkModeToggle />
@@ -123,7 +126,11 @@
 			<!-- Welcome Screen -->
 			<div class="text-center py-12">
 				<div class="max-w-md mx-auto">
-					<div class="text-6xl mb-4">💪</div>
+					<div class="flex justify-center mb-4">
+						<svg class="w-16 h-16 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+						</svg>
+					</div>
 					<h2 class="text-3xl font-bold text-gray-900 dark:text-white mb-4">
 						Welcome to Workout Tracker
 					</h2>
@@ -158,7 +165,11 @@
 					</div>
 				{:else if workoutDays.length === 0}
 					<div class="text-center py-12">
-						<div class="text-4xl mb-4">🏋️‍♂️</div>
+						<div class="flex justify-center mb-4">
+							<svg class="w-12 h-12 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+							</svg>
+						</div>
 						<h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-2">
 							No workout days yet
 						</h3>

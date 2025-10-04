@@ -147,7 +147,11 @@
 						</div>
 					{:else}
 						<div class="text-center py-8">
-							<div class="text-4xl mb-4">📋</div>
+							<div class="flex justify-center mb-4">
+								<svg class="w-12 h-12 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+								</svg>
+							</div>
 							<h3 class="text-lg font-medium text-gray-900 dark:text-white mb-2">
 								No workout days yet
 							</h3>
@@ -262,7 +266,11 @@
 									{/each}
 								{:else}
 									<div class="text-center py-8">
-										<div class="text-4xl mb-4">🏋️‍♂️</div>
+										<div class="flex justify-center mb-4">
+											<svg class="w-12 h-12 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+												<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+											</svg>
+										</div>
 										<h3 class="text-lg font-medium text-gray-900 dark:text-white mb-2">
 											No exercises yet
 										</h3>
@@ -281,7 +289,11 @@
 						</div>
 					{:else}
 						<div class="text-center py-12">
-							<div class="text-4xl mb-4">📋</div>
+							<div class="flex justify-center mb-4">
+								<svg class="w-12 h-12 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+								</svg>
+							</div>
 							<h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-2">
 								Select a Workout Day
 							</h2>

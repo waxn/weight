@@ -20,7 +20,23 @@ export const getUserWorkoutDays = query({
       workoutDays.map(async (day) => {
         const exercises = await Promise.all(
           day.exercises.map(async (exerciseId) => {
-            return await ctx.db.get(exerciseId);
+            const exercise = await ctx.db.get(exerciseId);
+            if (!exercise) return null;
+            
+            // Get exercise settings
+            const settings = await ctx.db
+              .query("workoutDayExercises")
+              .withIndex("by_workout_day", (q) => q.eq("workoutDayId", day._id))
+              .filter((q) => q.eq(q.field("exerciseId"), exerciseId))
+              .first();
+            
+            return {
+              ...exercise,
+              weight: settings?.weight || 0,
+              reps: settings?.reps || 5,
+              sets: settings?.sets || 3,
+              weightIncrement: settings?.weightIncrement || 5,
+            };
           })
         );
         return {
@@ -122,6 +138,18 @@ export const addExerciseToWorkoutDay = mutation({
     
     await ctx.db.patch(args.workoutDayId, {
       exercises: updatedExercises,
+      updatedAt: Date.now(),
+    });
+
+    // Store exercise settings
+    await ctx.db.insert("workoutDayExercises", {
+      workoutDayId: args.workoutDayId,
+      exerciseId: args.exerciseId,
+      weight: args.weight,
+      reps: args.reps,
+      sets: args.sets,
+      weightIncrement: args.weightIncrement,
+      createdAt: Date.now(),
       updatedAt: Date.now(),
     });
 

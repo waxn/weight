@@ -20,6 +20,18 @@ export default defineSchema({
     updatedAt: v.number(),
   }).index("by_user", ["userId"]),
 
+  workoutDayExercises: defineTable({
+    workoutDayId: v.id("workoutDays"),
+    exerciseId: v.id("exercises"),
+    weight: v.number(),
+    reps: v.number(),
+    sets: v.number(),
+    weightIncrement: v.number(),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  }).index("by_workout_day", ["workoutDayId"])
+    .index("by_exercise", ["exerciseId"]),
+
   exercises: defineTable({
     name: v.string(),
     description: v.optional(v.string()),
