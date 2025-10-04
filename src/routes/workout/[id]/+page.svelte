@@ -126,9 +126,38 @@
 		}
 	}
 
-	function undoExercise(exercise: any) {
-		completedExercises.delete(exercise._id);
-		failedExercises.delete(exercise._id);
+	async function undoExercise(exercise: any) {
+		if (!$user) {
+			alert('Please sign in to undo exercises');
+			return;
+		}
+
+		try {
+			// Find the most recent exercise log for this exercise from today
+			const today = new Date().toDateString();
+			const recentLog = workoutHistory.find(log => {
+				const logDate = new Date(log.completedAt).toDateString();
+				return logDate === today && log.exerciseId === exercise._id;
+			});
+
+			if (recentLog) {
+				// Delete the exercise log from the database
+				await convex.mutation(api.exerciseLogs.deleteExerciseLog, {
+					userId: $user._id,
+					exerciseLogId: recentLog._id
+				});
+
+				// Update UI state
+				completedExercises.delete(exercise._id);
+				failedExercises.delete(exercise._id);
+
+				// Reload workout day to refresh the data
+				await loadWorkoutDay();
+			}
+		} catch (error) {
+			console.error('Error undoing exercise:', error);
+			alert('Failed to undo exercise');
+		}
 	}
 
 	function goBack() {

@@ -131,3 +131,25 @@ export const getSuggestedWeight = query({
     return suggestedWeight;
   },
 });
+
+export const deleteExerciseLog = mutation({
+  args: {
+    userId: v.id("users"),
+    exerciseLogId: v.id("exerciseLogs"),
+  },
+  handler: async (ctx, args) => {
+    const user = await ctx.db.get(args.userId);
+
+    if (!user) {
+      throw new Error("User not found");
+    }
+
+    const exerciseLog = await ctx.db.get(args.exerciseLogId);
+    if (!exerciseLog || exerciseLog.userId !== user._id) {
+      throw new Error("Exercise log not found or not owned by user");
+    }
+
+    await ctx.db.delete(args.exerciseLogId);
+    return args.exerciseLogId;
+  },
+});
