@@ -8,7 +8,11 @@
 	let workoutDays: any[] = [];
 	let isLoading = true;
 	let selectedTimeframe = '30'; // days
+	let selectedExercise = 'all'; // 'all' or specific exercise name
 	let weightData: any[] = [];
+	let exerciseWeightData: Map<string, any[]> = new Map();
+	let exerciseColors: Map<string, string> = new Map();
+	let availableExercises: string[] = [];
 	let stats = {
 		totalWorkouts: 0,
 		totalExercises: 0,
@@ -17,6 +21,20 @@
 		mostUsedExercise: '',
 		workoutStreak: 0
 	};
+
+	// Color palette for different exercises
+	const colors = [
+		'#3B82F6', // blue
+		'#EF4444', // red
+		'#10B981', // green
+		'#F59E0B', // yellow
+		'#8B5CF6', // purple
+		'#F97316', // orange
+		'#06B6D4', // cyan
+		'#84CC16', // lime
+		'#EC4899', // pink
+		'#6B7280'  // gray
+	];
 
 	onMount(async () => {
 		await loadStatsData();
@@ -35,7 +53,7 @@
 			const [logs, days] = await Promise.all([
 				convex.query(api.exerciseLogs.getExerciseLogs, { 
 					userId: $user._id, 
-					limit: 1000 
+					limit: 2000 // Increased limit for comprehensive stats
 				}),
 				convex.query(api.workoutDays.getUserWorkoutDays, { userId: $user._id })
 			]);
@@ -45,6 +63,7 @@
 			
 			// Process data for charts and stats
 			processWeightData();
+			processExerciseWeightData();
 			calculateStats();
 		} catch (error) {
 			console.error('Error loading stats data:', error);
@@ -74,6 +93,56 @@
 			}))
 			.sort((a, b) => a.date.getTime() - b.date.getTime())
 			.slice(-parseInt(selectedTimeframe));
+	}
+
+	function processExerciseWeightData() {
+		// Clear previous data
+		exerciseWeightData.clear();
+		exerciseColors.clear();
+		
+		// Get all unique exercises
+		const uniqueExercises = new Set();
+		exerciseLogs.forEach(log => {
+			const exerciseName = log.exerciseDetails?.name || 'Unknown';
+			uniqueExercises.add(exerciseName);
+		});
+		
+		// Update available exercises list
+		availableExercises = ['all', ...Array.from(uniqueExercises).sort()];
+		
+		// Assign colors to exercises
+		Array.from(uniqueExercises).forEach((exercise, index) => {
+			exerciseColors.set(exercise, colors[index % colors.length]);
+		});
+		
+		// Process data for each exercise
+		uniqueExercises.forEach(exercise => {
+			const filteredLogs = exerciseLogs.filter(log => 
+				(log.exerciseDetails?.name || 'Unknown') === exercise
+			);
+			
+			// Group by date and get max weight for each day
+			const weightByDate = new Map();
+			filteredLogs.forEach(log => {
+				const date = new Date(log.completedAt).toDateString();
+				if (!weightByDate.has(date)) {
+					weightByDate.set(date, []);
+				}
+				weightByDate.get(date).push(log.weight);
+			});
+			
+			// Convert to chart data format
+			const exerciseData = Array.from(weightByDate.entries())
+				.map(([date, weights]) => ({
+					date: new Date(date),
+					weight: Math.max(...weights), // Use max weight for the day
+					exercise: exercise
+				}))
+				.sort((a, b) => a.date.getTime() - b.date.getTime())
+				.slice(-parseInt(selectedTimeframe));
+			
+			exerciseWeightData.set(exercise, exerciseData);
+		});
 	}
 
 	function calculateStats() {
@@ -133,6 +202,12 @@
 	function changeTimeframe(timeframe: string) {
 		selectedTimeframe = timeframe;
 		processWeightData();
+		processExerciseWeightData();
+	}
+
+	function changeExercise(exercise: string) {
+		selectedExercise = exercise;
+		// No need to reprocess data, just update display
 	}
 
 	function goBack() {
@@ -145,6 +220,92 @@
 
 	function formatWeight(weight: number) {
 		return Math.round(weight * 10) / 10;
+	}
+
+	function getChartDimensions() {
+		return {
+			width: 800,
+			height: 300,
+			padding: { top: 20, right: 20, bottom: 40, left: 60 }
+		};
+	}
+
+	function getMaxWeight() {
+		let maxWeight = 0;
+		exerciseWeightData.forEach(data => {
+			data.forEach(point => {
+				maxWeight = Math.max(maxWeight, point.weight);
+			});
+		});
+		return maxWeight || 100;
+	}
+
+	function getDateRange() {
+		if (exerciseWeightData.size === 0) return { min: new Date(), max: new Date() };
+		
+		let minDate = new Date();
+		let maxDate = new Date(0);
+		
+		exerciseWeightData.forEach(data => {
+			data.forEach(point => {
+				minDate = point.date < minDate ? point.date : minDate;
+				maxDate = point.date > maxDate ? point.date : maxDate;
+			});
+		});
+		
+		return { min: minDate, max: maxDate };
+	}
+
+	function getChartPosition(date: Date, weight: number) {
+		const dims = getChartDimensions();
+		const maxWeight = getMaxWeight();
+		const { min: minDate, max: maxDate } = getDateRange();
+		
+		const x = dims.padding.left + ((date.getTime() - minDate.getTime()) / (maxDate.getTime() - minDate.getTime())) * (dims.width - dims.padding.left - dims.padding.right);
+		const y = dims.padding.top + (1 - weight / maxWeight) * (dims.height - dims.padding.top - dims.padding.bottom);
+		
+		return { x, y };
+	}
+
+	function getFilteredExerciseData() {
+		if (selectedExercise === 'all') {
+			return exerciseWeightData;
+		} else {
+			const filtered = new Map();
+			if (exerciseWeightData.has(selectedExercise)) {
+				filtered.set(selectedExercise, exerciseWeightData.get(selectedExercise));
+			}
+			return filtered;
+		}
+	}
+
+	function getFilteredStats() {
+		if (selectedExercise === 'all') {
+			return stats;
+		} else {
+			// Calculate stats for specific exercise
+			const filteredLogs = exerciseLogs.filter(log => 
+				(log.exerciseDetails?.name || 'Unknown') === selectedExercise
+			);
+			
+			const uniqueWorkoutDays = new Set(filteredLogs.map(log => log.workoutDayId));
+			const averageWeight = filteredLogs.length > 0 ? 
+				filteredLogs.reduce((sum, log) => sum + log.weight, 0) / filteredLogs.length : 0;
+			
+			// Calculate strength gain for this exercise
+			const exerciseData = exerciseWeightData.get(selectedExercise) || [];
+			const strengthGain = exerciseData.length >= 2 ? 
+				exerciseData[exerciseData.length - 1].weight - exerciseData[0].weight : 0;
+			
+			return {
+				totalWorkouts: uniqueWorkoutDays.size,
+				totalExercises: filteredLogs.length,
+				averageWeight: averageWeight,
+				strengthGain: strengthGain,
+				mostUsedExercise: selectedExercise,
+				workoutStreak: stats.workoutStreak // Keep overall streak
+			};
+		}
 	}
 </script>
 
@@ -169,7 +330,18 @@
 					</button>
 					<h1 class="text-xl font-bold text-gray-900 dark:text-white">Workout Statistics</h1>
 				</div>
-				<div class="flex items-center space-x-2">
+				<div class="flex items-center space-x-3">
+					<select
+						bind:value={selectedExercise}
+						on:change={(e) => changeExercise(e.target.value)}
+						class="px-3 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+					>
+						{#each availableExercises as exercise}
+							<option value={exercise}>
+								{exercise === 'all' ? 'All Exercises' : exercise}
+							</option>
+						{/each}
+					</select>
 					<select
 						bind:value={selectedTimeframe}
 						on:change={(e) => changeTimeframe(e.target.value)}
@@ -219,8 +391,10 @@
 								</svg>
 							</div>
 							<div class="ml-4">
-								<p class="text-sm font-medium text-gray-600 dark:text-gray-400">Total Workouts</p>
-								<p class="text-2xl font-bold text-gray-900 dark:text-white">{stats.totalWorkouts}</p>
+								<p class="text-sm font-medium text-gray-600 dark:text-gray-400">
+									{selectedExercise === 'all' ? 'Total Workouts' : 'Workouts with ' + selectedExercise}
+								</p>
+								<p class="text-2xl font-bold text-gray-900 dark:text-white">{getFilteredStats().totalWorkouts}</p>
 							</div>
 						</div>
 					</div>
@@ -234,7 +408,7 @@
 							</div>
 							<div class="ml-4">
 								<p class="text-sm font-medium text-gray-600 dark:text-gray-400">Workout Streak</p>
-								<p class="text-2xl font-bold text-gray-900 dark:text-white">{stats.workoutStreak} days</p>
+								<p class="text-2xl font-bold text-gray-900 dark:text-white">{getFilteredStats().workoutStreak} days</p>
 							</div>
 						</div>
 					</div>
@@ -247,8 +421,10 @@
 								</svg>
 							</div>
 							<div class="ml-4">
-								<p class="text-sm font-medium text-gray-600 dark:text-gray-400">Avg Weight</p>
-								<p class="text-2xl font-bold text-gray-900 dark:text-white">{formatWeight(stats.averageWeight)} lbs</p>
+								<p class="text-sm font-medium text-gray-600 dark:text-gray-400">
+									{selectedExercise === 'all' ? 'Avg Weight' : 'Max Weight'}
+								</p>
+								<p class="text-2xl font-bold text-gray-900 dark:text-white">{formatWeight(getFilteredStats().averageWeight)} lbs</p>
 							</div>
 						</div>
 					</div>
@@ -261,39 +437,101 @@
 								</svg>
 							</div>
 							<div class="ml-4">
-								<p class="text-sm font-medium text-gray-600 dark:text-gray-400">Total Exercises</p>
-								<p class="text-2xl font-bold text-gray-900 dark:text-white">{stats.totalExercises}</p>
+								<p class="text-sm font-medium text-gray-600 dark:text-gray-400">
+									{selectedExercise === 'all' ? 'Total Exercises' : 'Times Done'}
+								</p>
+								<p class="text-2xl font-bold text-gray-900 dark:text-white">{getFilteredStats().totalExercises}</p>
 							</div>
 						</div>
 					</div>
 				</div>
 
-				<!-- Weight Progress Chart -->
+				<!-- Exercise Weight Progress Chart -->
 				<div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
 					<div class="flex justify-between items-center mb-6">
-						<h2 class="text-xl font-semibold text-gray-900 dark:text-white">Weight Progress</h2>
+						<h2 class="text-xl font-semibold text-gray-900 dark:text-white">
+							{selectedExercise === 'all' ? 'Exercise Weight Progress' : selectedExercise + ' Progress'}
+						</h2>
 						<div class="text-sm text-gray-600 dark:text-gray-400">
-							{stats.strengthGain > 0 ? '+' : ''}{formatWeight(stats.strengthGain)} lbs change
+							{getFilteredStats().strengthGain > 0 ? '+' : ''}{formatWeight(getFilteredStats().strengthGain)} lbs change
 						</div>
 					</div>
 					
-					{#if weightData.length > 0}
-						<div class="h-64 flex items-end justify-between space-x-1">
-							{#each weightData as dataPoint, index}
-								<div class="flex-1 flex flex-col items-center">
-									<div 
-										class="bg-blue-500 rounded-t w-full min-h-2 transition-all duration-300 hover:bg-blue-600"
-										style="height: {Math.max(20, (dataPoint.averageWeight / Math.max(...weightData.map(d => d.averageWeight))) * 200)}px"
-										title="{formatDate(dataPoint.date)}: {formatWeight(dataPoint.averageWeight)} lbs"
-									></div>
-									{#if index % Math.ceil(weightData.length / 5) === 0}
-										<span class="text-xs text-gray-500 dark:text-gray-400 mt-2 transform -rotate-45 origin-left">
-											{formatDate(dataPoint.date)}
-										</span>
-									{/if}
-								</div>
-							{/each}
+					{#if getFilteredExerciseData().size > 0}
+						{@const filteredData = getFilteredExerciseData()}
+						<div class="overflow-x-auto">
+							<svg viewBox="0 0 800 300" class="w-full h-80">
+								<!-- Grid lines -->
+								<defs>
+									<pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+										<path d="M 40 0 L 0 0 0 40" fill="none" stroke="#e5e7eb" stroke-width="0.5" opacity="0.3"/>
+									</pattern>
+								</defs>
+								<rect width="800" height="300" fill="url(#grid)" />
+								
+								<!-- Y-axis labels -->
+								{#each Array.from({length: 6}, (_, i) => getMaxWeight() * (5-i) / 5) as weight}
+									<text x="10" y="{getChartPosition(new Date(), weight).y + 5}" text-anchor="end" class="text-xs fill-gray-600 dark:fill-gray-400">
+										{Math.round(weight)} lbs
+									</text>
+									<line x1="60" y1="{getChartPosition(new Date(), weight).y}" x2="780" y2="{getChartPosition(new Date(), weight).y}" stroke="#e5e7eb" stroke-width="1" opacity="0.5"/>
+								{/each}
+								
+								<!-- X-axis labels -->
+								{#each Array.from({length: 5}, (_, i) => {
+									const dateRange = getDateRange();
+									const date = new Date(dateRange.min.getTime() + (dateRange.max.getTime() - dateRange.min.getTime()) * i / 4);
+									return date;
+								}) as date}
+									<text x="{getChartPosition(date, 0).x}" y="290" text-anchor="middle" class="text-xs fill-gray-600 dark:fill-gray-400">
+										{formatDate(date)}
+									</text>
+								{/each}
+								
+								<!-- Exercise lines -->
+								{#each Array.from(filteredData.entries()) as [exerciseName, data]}
+									{@const color = exerciseColors.get(exerciseName)}
+									{@const sortedData = data.sort((a, b) => a.date.getTime() - b.date.getTime())}
+									
+									<!-- Line path -->
+									<path 
+										d="M {sortedData.map(point => getChartPosition(point.date, point.weight)).map(pos => `${pos.x},${pos.y}`).join(' L ')}"
+										fill="none"
+										stroke="{color}"
+										stroke-width="3"
+										stroke-linecap="round"
+										stroke-linejoin="round"
+									/>
+									
+									<!-- Data points -->
+									{#each sortedData as point}
+										{@const pos = getChartPosition(point.date, point.weight)}
+										<circle 
+											cx="{pos.x}" 
+											cy="{pos.y}" 
+											r="4" 
+											fill="{color}"
+											stroke="white"
+											stroke-width="2"
+										>
+											<title>{exerciseName}: {formatWeight(point.weight)} lbs on {formatDate(point.date)}</title>
+										</circle>
+									{/each}
+								{/each}
+							</svg>
 						</div>
+						
+						<!-- Legend -->
+						{#if selectedExercise === 'all'}
+							<div class="flex flex-wrap gap-4 mt-4">
+								{#each Array.from(filteredData.keys()) as exerciseName}
+									<div class="flex items-center space-x-2">
+										<div class="w-4 h-4 rounded-full" style="background-color: {exerciseColors.get(exerciseName)}"></div>
+										<span class="text-sm text-gray-700 dark:text-gray-300">{exerciseName}</span>
+									</div>
+								{/each}
+							</div>
+						{/if}
 					{:else}
 						<div class="h-64 flex items-center justify-center text-gray-500 dark:text-gray-400">
 							<div class="text-center">
@@ -309,10 +547,12 @@
 
 				<!-- Additional Stats -->
 				<div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-					<!-- Most Used Exercise -->
+					<!-- Exercise Info -->
 					<div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
-						<h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Most Used Exercise</h3>
-						{#if stats.mostUsedExercise}
+						<h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+							{selectedExercise === 'all' ? 'Most Used Exercise' : 'Exercise Details'}
+						</h3>
+						{#if getFilteredStats().mostUsedExercise}
 							<div class="flex items-center space-x-3">
 								<div class="w-12 h-12 bg-blue-100 dark:bg-blue-900 rounded-lg flex items-center justify-center">
 									<svg class="w-6 h-6 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -320,8 +560,10 @@
 									</svg>
 								</div>
 								<div>
-									<p class="font-medium text-gray-900 dark:text-white">{stats.mostUsedExercise}</p>
-									<p class="text-sm text-gray-600 dark:text-gray-400">Your favorite exercise</p>
+									<p class="font-medium text-gray-900 dark:text-white">{getFilteredStats().mostUsedExercise}</p>
+									<p class="text-sm text-gray-600 dark:text-gray-400">
+										{selectedExercise === 'all' ? 'Your favorite exercise' : 'Selected exercise'}
+									</p>
 								</div>
 							</div>
 						{:else}

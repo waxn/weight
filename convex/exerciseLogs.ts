@@ -31,7 +31,18 @@ export const getExerciseLogs = query({
       .order("desc")
       .take(args.limit || 50);
 
-    return logs;
+    // Populate exercise details for each log
+    const logsWithExercises = await Promise.all(
+      logs.map(async (log) => {
+        const exercise = await ctx.db.get(log.exerciseId);
+        return {
+          ...log,
+          exerciseDetails: exercise
+        };
+      })
+    );
+
+    return logsWithExercises;
   },
 });
 
