@@ -1,0 +1,53 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom styles for the workout app */
+.workout-card {
+  @apply bg-white dark:bg-gray-800 rounded-lg shadow-md hover:shadow-lg transition-shadow border border-gray-200 dark:border-gray-700;
+}
+
+.btn-primary {
+  @apply px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors;
+}
+
+.btn-secondary {
+  @apply px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-md hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors;
+}
+
+.btn-danger {
+  @apply px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors;
+}
+
+.btn-success {
+  @apply px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors;
+}
+
+/* Mobile-first responsive design */
+@media (max-width: 640px) {
+  .mobile-padding {
+    @apply px-4;
+  }
+  
+  .mobile-text {
+    @apply text-sm;
+  }
+}
+
+/* Custom scrollbar for dark mode */
+.dark ::-webkit-scrollbar {
+  width: 8px;
+}
+
+.dark ::-webkit-scrollbar-track {
+  background: #374151;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: #6b7280;
+  border-radius: 4px;
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: #9ca3af;
+}
