@@ -1,0 +1,25 @@
+<svg width="512" height="512" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="512" height="512" fill="#3B82F6" rx="80"/>
+
+  <!-- Dumbbell Icon -->
+  <g transform="translate(256, 256)">
+    <!-- Left weight -->
+    <rect x="-180" y="-60" width="60" height="120" fill="white" rx="8"/>
+    <rect x="-200" y="-40" width="20" height="80" fill="white" rx="4"/>
+
+    <!-- Bar -->
+    <rect x="-120" y="-15" width="240" height="30" fill="white" rx="8"/>
+
+    <!-- Right weight -->
+    <rect x="120" y="-60" width="60" height="120" fill="white" rx="8"/>
+    <rect x="180" y="-40" width="20" height="80" fill="white" rx="4"/>
+
+    <!-- Center grip lines -->
+    <line x1="-40" y1="-15" x2="-40" y2="15" stroke="#3B82F6" stroke-width="4"/>
+    <line x1="-20" y1="-15" x2="-20" y2="15" stroke="#3B82F6" stroke-width="4"/>
+    <line x1="0" y1="-15" x2="0" y2="15" stroke="#3B82F6" stroke-width="4"/>
+    <line x1="20" y1="-15" x2="20" y2="15" stroke="#3B82F6" stroke-width="4"/>
+    <line x1="40" y1="-15" x2="40" y2="15" stroke="#3B82F6" stroke-width="4"/>
+  </g>
+</svg>

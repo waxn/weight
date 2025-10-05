@@ -5,6 +5,7 @@
 	import { darkMode, user } from '$lib/stores';
 	import { convex } from '$lib/convex';
 	import { api } from '../../convex/_generated/api';
+	import InstallPrompt from '$lib/components/InstallPrompt.svelte';
 
 	let { children } = $props();
 	let currentUser: any = null;
@@ -52,6 +53,16 @@
 			user.set(null);
 		}
 
+		// Register service worker for PWA
+		if ('serviceWorker' in navigator) {
+			try {
+				const registration = await navigator.serviceWorker.register('/service-worker.js');
+				console.log('Service Worker registered:', registration);
+			} catch (error) {
+				console.log('Service Worker registration failed:', error);
+			}
+		}
+
 		// Cleanup listener on unmount
 		return () => mediaQuery.removeEventListener('change', handleThemeChange);
 	});
@@ -70,11 +81,21 @@
 	<title>Workout Tracker</title>
 	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 	<meta name="description" content="Track your workouts and fitness progress" />
+
+	<!-- PWA Meta Tags -->
+	<link rel="manifest" href="/manifest.json" />
+	<meta name="theme-color" content="#3B82F6" />
+	<meta name="apple-mobile-web-app-capable" content="yes" />
+	<meta name="apple-mobile-web-app-status-bar-style" content="default" />
+	<meta name="apple-mobile-web-app-title" content="Workout" />
+	<link rel="apple-touch-icon" href="/icon.svg" />
 </svelte:head>
 
 	<main class="min-h-screen transition-colors duration-300 {$darkMode ? 'dark bg-gray-900' : 'bg-gray-50'}">
 	{@render children?.()}
 </main>
+
+<InstallPrompt />
 
 <style>
 	:global(.dark) {
