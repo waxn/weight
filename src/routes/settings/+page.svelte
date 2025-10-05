@@ -76,7 +76,7 @@
 			</div>
 		{:else}
 			<!-- User Profile -->
-			<div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-8">
+			<div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6">
 				<h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-4">
 					Profile Information
 				</h2>
@@ -94,6 +94,34 @@
 						<p class="text-gray-900 dark:text-white">{currentUser.email}</p>
 					</div>
 				</div>
+			</div>
+
+			<!-- Equipment Settings -->
+			<div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6">
+				<h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-4">
+					Equipment Settings
+				</h2>
+				<a
+					href="/weight-settings"
+					class="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
+				>
+					<div class="flex items-center space-x-3">
+						<svg class="w-6 h-6 text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path>
+						</svg>
+						<div>
+							<div class="font-medium text-gray-900 dark:text-white">
+								Weight Plate Configuration
+							</div>
+							<div class="text-sm text-gray-600 dark:text-gray-400">
+								Set up your available weight plates
+							</div>
+						</div>
+					</div>
+					<svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+					</svg>
+				</a>
 			</div>
 
 			<!-- Instructions -->

@@ -5,6 +5,7 @@
 	import { api } from '../../../../convex/_generated/api';
 	import { convex } from '$lib/convex';
 	import ExerciseCard from '$lib/components/ExerciseCard.svelte';
+	import { calculatePlates, calculateDeadliftPlates, shouldShowPlateCalculator, formatPlates } from '$lib/utils/plateCalculator';
 
 	let workoutDay: any = null;
 	let isLoading = true;
@@ -12,6 +13,7 @@
 	let completedExercises: Set<string> = new Set();
 	let failedExercises: Set<string> = new Set();
 	let workoutHistory: any[] = [];
+	let userWeights: any[] = [];
 
 	onMount(async () => {
 		await loadWorkoutDay();
@@ -22,27 +24,29 @@
 			isLoading = false;
 			return;
 		}
-		
+
 		try {
 			isLoading = true;
 			const workoutDayId = $page.params.id;
-			const [days, history] = await Promise.all([
+			const [days, history, weights] = await Promise.all([
 				convex.query(api.workoutDays.getUserWorkoutDays, { userId: $user._id }),
-				convex.query(api.exerciseLogs.getExerciseLogs, { 
-					userId: $user._id, 
+				convex.query(api.exerciseLogs.getExerciseLogs, {
+					userId: $user._id,
 					workoutDayId: workoutDayId as any,
 					limit: 10
-				})
+				}),
+				convex.query(api.weights.getUserWeights, { userId: $user._id })
 			]);
-			
+
 			workoutDay = days?.find(day => day._id === workoutDayId);
 			workoutHistory = history || [];
-			
+			userWeights = weights || [];
+
 			// Check if exercises were completed today
 			const today = new Date().toDateString();
 			completedExercises.clear();
 			failedExercises.clear();
-			
+
 			workoutHistory.forEach(log => {
 				const logDate = new Date(log.completedAt).toDateString();
 				if (logDate === today) {
@@ -274,7 +278,14 @@
 				{#if workoutDay.exerciseDetails && workoutDay.exerciseDetails.length > 0}
 					<div class="space-y-4">
 						{#each workoutDay.exerciseDetails as exercise}
-							<div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+							<div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 relative">
+								{#if shouldShowPlateCalculator(exercise.name) && exercise.weight > 0}
+									{@const isDeadlift = exercise.name.toLowerCase().includes('deadlift')}
+									{@const plates = isDeadlift ? calculateDeadliftPlates(exercise.weight, 45, userWeights) : calculatePlates(exercise.weight, 45, userWeights)}
+									<div class="absolute top-2 right-2 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 px-2 py-1 rounded text-xs font-medium">
+										Each side: {formatPlates(plates)}
+									</div>
+								{/if}
 								<div class="flex items-center justify-between mb-4">
 									<div class="flex items-center space-x-3">
 										{#if exercise.icon}

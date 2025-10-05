@@ -16,6 +16,7 @@ import type {
 import type * as exerciseLogs from "../exerciseLogs.js";
 import type * as exercises from "../exercises.js";
 import type * as users from "../users.js";
+import type * as weights from "../weights.js";
 import type * as workoutDays from "../workoutDays.js";
 
 /**
@@ -30,6 +31,7 @@ declare const fullApi: ApiFromModules<{
   exerciseLogs: typeof exerciseLogs;
   exercises: typeof exercises;
   users: typeof users;
+  weights: typeof weights;
   workoutDays: typeof workoutDays;
 }>;
 export declare const api: FilterApi<

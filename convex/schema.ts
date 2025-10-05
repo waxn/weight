@@ -57,4 +57,13 @@ export default defineSchema({
     .index("by_exercise", ["exerciseId"])
     .index("by_workout_day", ["workoutDayId"])
     .index("by_date", ["completedAt"]),
+
+  weights: defineTable({
+    userId: v.id("users"),
+    weight: v.number(), // Weight in lbs (e.g., 45, 25, 10, 5, 2.5)
+    quantity: v.number(), // How many plates of this weight
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  }).index("by_user", ["userId"])
+    .index("by_user_and_weight", ["userId", "weight"]),
 });
