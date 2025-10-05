@@ -34,9 +34,6 @@
 		};
 		mediaQuery.addEventListener('change', handleThemeChange);
 
-		// Cleanup listener on unmount
-		return () => mediaQuery.removeEventListener('change', handleThemeChange);
-
 		// Load user from localStorage session
 		const savedUser = localStorage.getItem('user');
 		if (savedUser) {
@@ -54,6 +51,9 @@
 			currentUser = null;
 			user.set(null);
 		}
+
+		// Cleanup listener on unmount
+		return () => mediaQuery.removeEventListener('change', handleThemeChange);
 	});
 
 	// Update dark mode in localStorage when it changes
