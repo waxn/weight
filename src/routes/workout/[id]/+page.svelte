@@ -175,24 +175,24 @@
 
 <div class="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
 	<!-- Header -->
-	<header class="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700">
+	<header class="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700 sticky top-0 z-10">
 		<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-			<div class="flex items-center h-16">
+			<div class="flex items-center h-14 sm:h-16">
 				<button
 					on:click={goBack}
-					class="mr-4 p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+					class="mr-2 sm:mr-4 p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors active:scale-95 flex-shrink-0"
 					aria-label="Go back"
 				>
-					<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+					<svg class="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
 					</svg>
 				</button>
-				<div>
-					<h1 class="text-xl font-bold text-gray-900 dark:text-white">
+				<div class="flex-1 min-w-0">
+					<h1 class="text-base sm:text-xl font-bold text-gray-900 dark:text-white truncate">
 						{workoutDay?.name || 'Workout'}
 					</h1>
 					{#if workoutDay?.description}
-						<p class="text-sm text-gray-600 dark:text-gray-400">
+						<p class="text-xs sm:text-sm text-gray-600 dark:text-gray-400 truncate">
 							{workoutDay.description}
 						</p>
 					{/if}
@@ -202,7 +202,7 @@
 	</header>
 
 	<!-- Main Content -->
-	<main class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+	<main class="max-w-4xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-8">
 		{#if isLoading}
 			<div class="flex justify-center items-center py-12">
 				<div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
@@ -278,21 +278,14 @@
 				{#if workoutDay.exerciseDetails && workoutDay.exerciseDetails.length > 0}
 					<div class="space-y-4">
 						{#each workoutDay.exerciseDetails as exercise}
-							<div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 relative">
-								{#if shouldShowPlateCalculator(exercise.name) && exercise.weight > 0}
-									{@const isDeadlift = exercise.name.toLowerCase().includes('deadlift')}
-									{@const plates = isDeadlift ? calculateDeadliftPlates(exercise.weight, 45, userWeights) : calculatePlates(exercise.weight, 45, userWeights)}
-									<div class="absolute top-2 right-2 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 px-2 py-1 rounded text-xs font-medium">
-										Each side: {formatPlates(plates)}
-									</div>
-								{/if}
-								<div class="flex items-center justify-between mb-4">
-									<div class="flex items-center space-x-3">
+							<div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4 sm:p-6 relative">
+								<div class="mb-4">
+									<div class="flex items-center space-x-3 mb-2">
 										{#if exercise.icon}
-											<span class="text-3xl">{exercise.icon}</span>
+											<span class="text-2xl sm:text-3xl">{exercise.icon}</span>
 										{/if}
-										<div>
-											<h4 class="text-lg font-semibold text-gray-900 dark:text-white">
+										<div class="flex-1 min-w-0">
+											<h4 class="text-base sm:text-lg font-semibold text-gray-900 dark:text-white">
 												{exercise.name}
 											</h4>
 											<p class="text-sm text-gray-600 dark:text-gray-400">
@@ -300,58 +293,65 @@
 											</p>
 										</div>
 									</div>
+									{#if shouldShowPlateCalculator(exercise.name) && exercise.weight > 0}
+										{@const isDeadlift = exercise.name.toLowerCase().includes('deadlift')}
+										{@const plates = isDeadlift ? calculateDeadliftPlates(exercise.weight, 45, userWeights) : calculatePlates(exercise.weight, 45, userWeights)}
+										<div class="mt-2 bg-blue-50 dark:bg-blue-900/30 text-blue-800 dark:text-blue-200 px-3 py-2 rounded-md text-xs sm:text-sm font-medium">
+											<span class="font-semibold">Each side:</span> {formatPlates(plates)}
+										</div>
+									{/if}
 								</div>
 								
 								<!-- Success/Failure Buttons -->
 								<div class="text-center">
 									{#if completedExercises.has(exercise._id)}
-										<div class="py-4">
+										<div class="py-3 sm:py-4">
 											<div class="flex items-center justify-center mb-2">
-												<svg class="w-8 h-8 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+												<svg class="w-10 h-10 sm:w-12 sm:h-12 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 													<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
 												</svg>
 											</div>
-											<p class="text-green-600 dark:text-green-400 font-medium mb-3">
+											<p class="text-green-600 dark:text-green-400 font-medium mb-3 text-sm sm:text-base">
 												Completed! Next time: {exercise.weight + exercise.weightIncrement} lbs
 											</p>
 											<button
 												on:click={() => undoExercise(exercise)}
-												class="px-4 py-2 text-sm bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+												class="px-6 py-3 text-sm sm:text-base bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors active:scale-95 min-h-[48px]"
 											>
 												Undo
 											</button>
 										</div>
 									{:else if failedExercises.has(exercise._id)}
-										<div class="py-4">
+										<div class="py-3 sm:py-4">
 											<div class="flex items-center justify-center mb-2">
-												<svg class="w-8 h-8 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+												<svg class="w-10 h-10 sm:w-12 sm:h-12 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 													<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
 												</svg>
 											</div>
-											<p class="text-red-600 dark:text-red-400 font-medium mb-3">
+											<p class="text-red-600 dark:text-red-400 font-medium mb-3 text-sm sm:text-base">
 												Keep trying! Same weight next time.
 											</p>
 											<button
 												on:click={() => undoExercise(exercise)}
-												class="px-4 py-2 text-sm bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+												class="px-6 py-3 text-sm sm:text-base bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors active:scale-95 min-h-[48px]"
 											>
 												Undo
 											</button>
 										</div>
 									{:else}
-										<p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
+										<p class="text-sm sm:text-base text-gray-600 dark:text-gray-400 mb-4">
 											Did you complete your sets?
 										</p>
-										<div class="flex space-x-4 justify-center">
+										<div class="flex flex-col sm:flex-row gap-3 sm:gap-4 sm:justify-center">
 											<button
 												on:click={() => markCompleted(exercise)}
 												disabled={isLogging}
-												class="px-8 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-lg font-medium flex items-center space-x-2"
+												class="flex-1 sm:flex-initial px-8 py-4 bg-green-600 text-white rounded-lg hover:bg-green-700 active:bg-green-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-base sm:text-lg font-medium flex items-center justify-center space-x-2 min-h-[56px] active:scale-95"
 											>
 												{#if isLogging}
 													<span>Logging...</span>
 												{:else}
-													<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+													<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 														<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
 													</svg>
 													<span>Yes</span>
@@ -360,12 +360,12 @@
 											<button
 												on:click={() => markFailed(exercise)}
 												disabled={isLogging}
-												class="px-8 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-lg font-medium flex items-center space-x-2"
+												class="flex-1 sm:flex-initial px-8 py-4 bg-red-600 text-white rounded-lg hover:bg-red-700 active:bg-red-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-base sm:text-lg font-medium flex items-center justify-center space-x-2 min-h-[56px] active:scale-95"
 											>
 												{#if isLogging}
 													<span>Logging...</span>
 												{:else}
-													<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+													<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 														<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
 													</svg>
 													<span>No</span>
