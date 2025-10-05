@@ -315,26 +315,26 @@
 
 <div class="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
 	<!-- Header -->
-	<header class="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700">
+	<header class="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700 sticky top-0 z-10">
 		<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-			<div class="flex items-center justify-between h-16">
+			<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between py-3 sm:py-0 sm:h-16 gap-3">
 				<div class="flex items-center">
 					<button
 						on:click={goBack}
-						class="mr-4 p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+						class="mr-2 sm:mr-4 p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors active:scale-95 flex-shrink-0"
 						aria-label="Go back"
 					>
-						<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+						<svg class="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
 						</svg>
 					</button>
-					<h1 class="text-xl font-bold text-gray-900 dark:text-white">Workout Statistics</h1>
+					<h1 class="text-base sm:text-xl font-bold text-gray-900 dark:text-white">Workout Statistics</h1>
 				</div>
-				<div class="flex items-center space-x-3">
+				<div class="flex items-center space-x-2 sm:space-x-3">
 					<select
 						bind:value={selectedExercise}
 						on:change={(e) => changeExercise(e.target.value)}
-						class="px-3 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+						class="flex-1 sm:flex-initial px-2 sm:px-3 py-2 text-xs sm:text-sm border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white min-h-[40px]"
 					>
 						{#each availableExercises as exercise}
 							<option value={exercise}>
@@ -345,12 +345,12 @@
 					<select
 						bind:value={selectedTimeframe}
 						on:change={(e) => changeTimeframe(e.target.value)}
-						class="px-3 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+						class="flex-1 sm:flex-initial px-2 sm:px-3 py-2 text-xs sm:text-sm border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white min-h-[40px]"
 					>
-						<option value="7">Last 7 days</option>
-						<option value="30">Last 30 days</option>
-						<option value="90">Last 90 days</option>
-						<option value="365">Last year</option>
+						<option value="7">7 days</option>
+						<option value="30">30 days</option>
+						<option value="90">90 days</option>
+						<option value="365">1 year</option>
 					</select>
 				</div>
 			</div>
@@ -358,7 +358,7 @@
 	</header>
 
 	<!-- Main Content -->
-	<main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+	<main class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-8">
 		{#if isLoading}
 			<div class="flex justify-center items-center py-12">
 				<div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
@@ -380,87 +380,88 @@
 				</a>
 			</div>
 		{:else}
-			<div class="space-y-8">
+			<div class="space-y-6 sm:space-y-8">
 				<!-- Stats Overview -->
-				<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-					<div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
-						<div class="flex items-center">
-							<div class="flex-shrink-0">
-								<svg class="w-8 h-8 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+				<div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
+					<div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-3 sm:p-6">
+						<div class="flex flex-col sm:flex-row sm:items-center">
+							<div class="flex-shrink-0 mb-2 sm:mb-0">
+								<svg class="w-6 h-6 sm:w-8 sm:h-8 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
 								</svg>
 							</div>
-							<div class="ml-4">
-								<p class="text-sm font-medium text-gray-600 dark:text-gray-400">
-									{selectedExercise === 'all' ? 'Total Workouts' : 'Workouts with ' + selectedExercise}
+							<div class="sm:ml-4">
+								<p class="text-xs sm:text-sm font-medium text-gray-600 dark:text-gray-400 line-clamp-2">
+									{selectedExercise === 'all' ? 'Total Workouts' : 'Workouts'}
 								</p>
-								<p class="text-2xl font-bold text-gray-900 dark:text-white">{getFilteredStats().totalWorkouts}</p>
+								<p class="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">{getFilteredStats().totalWorkouts}</p>
 							</div>
 						</div>
 					</div>
 
-					<div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
-						<div class="flex items-center">
-							<div class="flex-shrink-0">
-								<svg class="w-8 h-8 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+					<div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-3 sm:p-6">
+						<div class="flex flex-col sm:flex-row sm:items-center">
+							<div class="flex-shrink-0 mb-2 sm:mb-0">
+								<svg class="w-6 h-6 sm:w-8 sm:h-8 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
 								</svg>
 							</div>
-							<div class="ml-4">
-								<p class="text-sm font-medium text-gray-600 dark:text-gray-400">Workout Streak</p>
-								<p class="text-2xl font-bold text-gray-900 dark:text-white">{getFilteredStats().workoutStreak} days</p>
+							<div class="sm:ml-4">
+								<p class="text-xs sm:text-sm font-medium text-gray-600 dark:text-gray-400">Streak</p>
+								<p class="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">{getFilteredStats().workoutStreak} days</p>
 							</div>
 						</div>
 					</div>
 
-					<div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
-						<div class="flex items-center">
-							<div class="flex-shrink-0">
-								<svg class="w-8 h-8 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+					<div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-3 sm:p-6">
+						<div class="flex flex-col sm:flex-row sm:items-center">
+							<div class="flex-shrink-0 mb-2 sm:mb-0">
+								<svg class="w-6 h-6 sm:w-8 sm:h-8 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
 								</svg>
 							</div>
-							<div class="ml-4">
-								<p class="text-sm font-medium text-gray-600 dark:text-gray-400">
-									{selectedExercise === 'all' ? 'Avg Weight' : 'Max Weight'}
+							<div class="sm:ml-4">
+								<p class="text-xs sm:text-sm font-medium text-gray-600 dark:text-gray-400">
+									{selectedExercise === 'all' ? 'Avg' : 'Max'}
 								</p>
-								<p class="text-2xl font-bold text-gray-900 dark:text-white">{formatWeight(getFilteredStats().averageWeight)} lbs</p>
+								<p class="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">{formatWeight(getFilteredStats().averageWeight)} lbs</p>
 							</div>
 						</div>
 					</div>
 
-					<div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
-						<div class="flex items-center">
-							<div class="flex-shrink-0">
-								<svg class="w-8 h-8 text-orange-600 dark:text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+					<div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-3 sm:p-6">
+						<div class="flex flex-col sm:flex-row sm:items-center">
+							<div class="flex-shrink-0 mb-2 sm:mb-0">
+								<svg class="w-6 h-6 sm:w-8 sm:h-8 text-orange-600 dark:text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
 								</svg>
 							</div>
-							<div class="ml-4">
-								<p class="text-sm font-medium text-gray-600 dark:text-gray-400">
-									{selectedExercise === 'all' ? 'Total Exercises' : 'Times Done'}
+							<div class="sm:ml-4">
+								<p class="text-xs sm:text-sm font-medium text-gray-600 dark:text-gray-400">
+									{selectedExercise === 'all' ? 'Total' : 'Done'}
 								</p>
-								<p class="text-2xl font-bold text-gray-900 dark:text-white">{getFilteredStats().totalExercises}</p>
+								<p class="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">{getFilteredStats().totalExercises}</p>
 							</div>
 						</div>
 					</div>
 				</div>
 
 				<!-- Exercise Weight Progress Chart -->
-				<div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
-					<div class="flex justify-between items-center mb-6">
-						<h2 class="text-xl font-semibold text-gray-900 dark:text-white">
-							{selectedExercise === 'all' ? 'Exercise Weight Progress' : selectedExercise + ' Progress'}
+				<div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4 sm:p-6">
+					<div class="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4 sm:mb-6 gap-2">
+						<h2 class="text-base sm:text-xl font-semibold text-gray-900 dark:text-white">
+							{selectedExercise === 'all' ? 'Progress' : selectedExercise}
 						</h2>
-						<div class="text-sm text-gray-600 dark:text-gray-400">
+						<div class="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
 							{getFilteredStats().strengthGain > 0 ? '+' : ''}{formatWeight(getFilteredStats().strengthGain)} lbs change
 						</div>
 					</div>
-					
+
 					{#if getFilteredExerciseData().size > 0}
 						{@const filteredData = getFilteredExerciseData()}
-						<div class="overflow-x-auto">
-							<svg viewBox="0 0 800 300" class="w-full h-80">
+						<div class="overflow-x-auto -mx-4 sm:mx-0">
+							<div class="min-w-[600px] px-4 sm:px-0">
+								<svg viewBox="0 0 800 300" class="w-full h-64 sm:h-80">
 								<!-- Grid lines -->
 								<defs>
 									<pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
@@ -518,16 +519,17 @@
 										</circle>
 									{/each}
 								{/each}
-							</svg>
+								</svg>
+							</div>
 						</div>
-						
+
 						<!-- Legend -->
 						{#if selectedExercise === 'all'}
-							<div class="flex flex-wrap gap-4 mt-4">
+							<div class="flex flex-wrap gap-2 sm:gap-4 mt-4">
 								{#each Array.from(filteredData.keys()) as exerciseName}
-									<div class="flex items-center space-x-2">
-										<div class="w-4 h-4 rounded-full" style="background-color: {exerciseColors.get(exerciseName)}"></div>
-										<span class="text-sm text-gray-700 dark:text-gray-300">{exerciseName}</span>
+									<div class="flex items-center space-x-1.5 sm:space-x-2">
+										<div class="w-3 h-3 sm:w-4 sm:h-4 rounded-full flex-shrink-0" style="background-color: {exerciseColors.get(exerciseName)}"></div>
+										<span class="text-xs sm:text-sm text-gray-700 dark:text-gray-300">{exerciseName}</span>
 									</div>
 								{/each}
 							</div>
