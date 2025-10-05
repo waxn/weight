@@ -8,7 +8,7 @@
 export function calculatePlates(
 	totalWeight: number,
 	barWeight: number = 45,
-	userWeights: Array<{weight: number, quantity: number}> = []
+	userWeights: any[] = []
 ): number[] {
 	// Calculate weight needed on each side
 	const weightPerSide = (totalWeight - barWeight) / 2;
@@ -27,7 +27,7 @@ export function calculatePlates(
 		{weight: 2.5, quantity: 2}
 	];
 
-	const weights = userWeights.length > 0 ? userWeights : defaultWeights;
+	const weights = userWeights && userWeights.length > 0 ? userWeights : defaultWeights;
 
 	// Sort by weight descending
 	const sortedWeights = [...weights].sort((a, b) => b.weight - a.weight);
@@ -88,7 +88,7 @@ export function formatPlates(plates: number[]): string {
 export function calculateDeadliftPlates(
 	totalWeight: number,
 	barWeight: number = 45,
-	userWeights: Array<{weight: number, quantity: number}> = []
+	userWeights: any[] = []
 ): number[] {
 	const plates = calculatePlates(totalWeight, barWeight, userWeights);
 
@@ -97,7 +97,7 @@ export function calculateDeadliftPlates(
 		const weightPerSide = (totalWeight - barWeight) / 2;
 
 		// Check if user has 10lb plates available
-		const weights = userWeights.length > 0 ? userWeights : [
+		const weights = userWeights && userWeights.length > 0 ? userWeights : [
 			{weight: 45, quantity: 2},
 			{weight: 35, quantity: 2},
 			{weight: 25, quantity: 2},
